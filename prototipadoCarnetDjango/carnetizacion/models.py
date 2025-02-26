@@ -1,59 +1,60 @@
 from django.db import models
 # Create your models here.
 
-class Ficha(models.Model):
-    ficha = models.CharField(max_length=191, primary_key=True)  
-    nombre_ficha = models.CharField(max_length=255)
-    fecha_inicio = models.CharField(max_length=255)
-    base = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.nombre_ficha
-
-
-# Model for the Instructores table
-class Instructor(models.Model):
-    id = models.AutoField(primary_key=True)
-    correo_instructor = models.EmailField()
-    nombres = models.CharField(max_length=255)
-    apellidos = models.CharField(max_length=255)
-    numero_identificacion = models.CharField(max_length=50)
-    clave = models.CharField(max_length=255, null=True, blank=True)  # Permitir null y vacío
-
-    def __str__(self):
-        return f'{self.nombres} {self.apellidos}'
-
-
-# Model for the Rh table 
 class Rh(models.Model):
     id = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=255)
+    Rh = models.CharField(max_length=10)
 
-    def __str__(self):
-        return self.nombre
+class TipoDoc(models.Model):
+    id = models.AutoField(primary_key=True)
+    tipo = models.CharField(max_length=50)
 
+class Roll(models.Model):
+    id = models.AutoField(primary_key=True)
+    roll = models.CharField(max_length=50)
 
-# Model for the Aprendices table
+class Estado(models.Model):
+    id = models.AutoField(primary_key=True)
+    estado = models.CharField(max_length=50)
+
+class Modalidad(models.Model):
+    id = models.AutoField(primary_key=True)
+    modalidad = models.CharField(max_length=50)
+
+class Ficha(models.Model):
+    ficha = models.CharField(primary_key=True, max_length=20)
+    nombre_ficha = models.CharField(max_length=100)
+    fecha_inicio = models.CharField(max_length=50)
+    modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE)
+
+class Instructor(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombres = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    correo_instructor = models.CharField(max_length=100)
+    password = models.CharField(max_length=100)
+    numero_identificacion = models.CharField(max_length=50, unique=True)
+    numero_telefono = models.CharField(max_length=20, null=True, blank=True)
+    rh = models.ForeignKey(Rh, on_delete=models.SET_NULL, null=True)
+    roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
+
 class Aprendiz(models.Model):
     id = models.AutoField(primary_key=True)
-    tipo_documento = models.CharField(max_length=50)
-    numero_identificacion = models.CharField(max_length=50)
-    nombres = models.CharField(max_length=255)
-    apellidos = models.CharField(max_length=255)
-    rh = models.ForeignKey(Rh, on_delete=models.SET_NULL, null=True, blank=True, related_name='aprendices')  # Permitir null
-    clave = models.CharField(max_length=255, null=True, blank=True)  # Permitir null y vacío
-    instructor_a_cargo = models.ForeignKey(Instructor, on_delete=models.SET_NULL, null=True, related_name='aprendices')
-    ficha = models.ForeignKey(Ficha, on_delete=models.SET_NULL, null=True, to_field='ficha', related_name='aprendices')  # Apunta a ficha como clave primaria
+    nombres = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    rh = models.ForeignKey(Rh, on_delete=models.SET_NULL, null=True, blank=True)
+    correo = models.CharField(max_length=100)
+    password = models.CharField(max_length=100, null=True, blank=True)
+    telefono = models.CharField(max_length=20, null=True, blank=True)
+    tipo_documento = models.ForeignKey(TipoDoc, on_delete=models.CASCADE)
+    numero_documento = models.CharField(max_length=50, unique=True)
+    instructor_cargo = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
+    ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
+    estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f'{self.nombres} {self.apellidos}'
-
-# Model for the ProgramaEnFormacion table
 class ProgramaEnFormacion(models.Model):
     id = models.AutoField(primary_key=True)
-    nombre_ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
-    ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE, related_name='programas')
-    nombre_instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.nombre_ficha.nombre_ficha} - {self.nombre_instructor.nombres}'
+    nombre = models.ForeignKey(Ficha, on_delete=models.CASCADE, related_name='programas')
+    ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
+    instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
