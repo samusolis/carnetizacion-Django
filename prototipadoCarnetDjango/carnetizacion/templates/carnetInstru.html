@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Carnetización</title>
-    <link rel="stylesheet" href="{% static 'css/carnet.css' %}">
+    <link rel="stylesheet" href="{% static 'css/carnetInstru.css' %}">
 </head>
 <body>
     <div class="container">
@@ -13,7 +13,10 @@
             <img src="{% static 'imagenes/logoSena.png' %}" alt="Logo SENA">
             <h1>CARNET</h1>
             <div class="buttons">
-              <a href="{% url "index" %}"><button>Salir</button></a>
+              <a href="{% url "carnetTras" %}"><button>Lado B</button></a>
+            </div>
+            <div class="buttons">
+                <a href="{% url "index" %}"><button>Salir</button></a>
             </div>
         </div>
         <div class="right-panel">
@@ -23,19 +26,22 @@
                 <img src="{% static 'imagenes/logoSena.png' %}" alt="Logo SENA">
               </div>
               <div class="photo">
-                <img src="{% static 'imagenes/testimonio2.jpg' %}" alt="foto aprendiz">
+                <img src="{% static 'imagenes/fotoinstru.jpg' %}" alt="foto aprendiz">
               </div>
             </div>
             <div class="info">
-              <p>APRENDIZ</p>
+                
+              <p>INSTRUCTOR</p>
               <hr>
-              <h2>{{ aprendiz.nombres }}<br>{{ aprendiz.apellidos }}</h2>
-              <p>{{aprendiz.tipo_documento}} {{ aprendiz.numero_identificacion }}</p>
-              <p>Rh: {{ aprendiz.rh }}</p>
+              <h2>{{ instructor.nombres }}<br>{{ instructor.apellidos }}</h2>
+              <p>CC {{ instructor.numero_identificacion }}</p>
+              <p>Rh: </p>
             </div>
+
             <div class="barcode">
-              <img src="{{ barcode_url }}" alt="Código de barras de {{ aprendiz.numero_identificacion }}">
+              <img src="{{ barcode_url }}" alt="Código de barras de {{ instructor.numero_identificacion }}">
             </div>
+
             <div class="footer">
               <h3>Regional</h3>
               <p>Centro de formación o dependencia</p>
