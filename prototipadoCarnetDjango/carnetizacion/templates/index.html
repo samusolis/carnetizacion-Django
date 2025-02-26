@@ -1,0 +1,51 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Carnetización Digital</title>
+
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="background">
+    <div class="container">
+        
+        <!-- Logo y título -->
+        <div class="header">
+            <img src="{% static 'imagenes/logoSena.png' %}" alt="Logo Sena" class="logo">
+            <h1 class="title">Sistema de Carnetización Digital</h1>
+        </div>
+        
+        <div class="content">
+            <!-- Menú lateral -->
+            <div class="menu">
+                <p>Inicia como:</p>
+                <a href="{% url "index" %}"><button class="menu-button" id="aprendiz">Aprendiz</button></a>
+                <a href="{% url "instructor" %}"><button class="menu-button" id="instructor">Instructor</button></a>
+                <a href="{% url "administrador" %}"><button class="menu-button" id="administrador">Administrador</button></a>
+            </div>
+            
+            <!-- Cuadro de inicio de sesión -->
+            <div class="login-container" id="login-container">
+                {% block content %}
+                    <h2>Aprendiz</h2>
+                    <h3>Identifícate</h3>
+
+                    <form method="POST" action="{% url 'verificar_documento' %}">
+                        {% csrf_token %}
+                        <label for="numId">Número de Identificación:</label>
+                        <input type="text" id="documento" name="documento" required>
+                        <button type="submit">Imprimir Carnet</button>
+                        {% if mensaje %}
+                            <p style="color: red;">{{ mensaje }}</p>
+                        {% endif %}
+                    </form>
+                {% endblock content %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
