@@ -152,7 +152,7 @@ def editar_aprendiz(request, numero_identificacion):
     })
 
 
-def carnet_Tras(request):
+def carnetTras(request):
     return render (request, 'carnetTras.html')
 
 def ver_fichas_admin(request):
@@ -178,3 +178,8 @@ def aprobar_registros(request):
 
 def configurar_permisos(request):
     return render(request, 'admin/configurar_permisos.html')
+
+def carnetInstru(request):
+    instructor = Instructor.objects.all()
+    return render(request, 'carnetInstru.html', {"instructor": instructor})
+
