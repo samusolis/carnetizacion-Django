@@ -7,6 +7,7 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Aprendiz, Rh, Instructor, Ficha, TipoDoc, Roll, Estado, Modalidad, ProgramaEnFormacion
 from .forms import UploadFileForm
+from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 
 
@@ -108,24 +109,63 @@ def instructor(request):
     return render (request, 'instructor.html')
 
 def instru_login(request):
+    if "instructor_id" in request.session:
+        return redirect("dashboard_instructor")  # Redirigir al dashboard si ya está autenticado
+
     if request.method == "POST":
-        correo = request.POST.get("email")
-        contraseña = request.POST.get("password")
+        correo_instructor = request.POST.get("email")
+        password = request.POST.get("password")
 
         try:
-            # Comparación directa porque las contraseñas NO están encriptadas
-            instructor = Instructor.objects.get(correo_instructor=correo, password=contraseña)
-
-            # Guardar información en la sesión
-            request.session["nombre"] = instructor.nombres
-            request.session["id_instructor"] = instructor.id
-
-            return redirect("instru_login")  # Redirigir a la misma página o al dashboard
+            instructor = Instructor.objects.get(correo_instructor=correo_instructor)
         except Instructor.DoesNotExist:
-            messages.error(request, "Correo o contraseña incorrectos")  
+            messages.error(request, "Usuario no encontrado.")
+            return redirect("instructor")
 
-    return render(request, "instru-login.html")
+        if not instructor.password or instructor.password.strip() == "":
+            request.session["user_email"] = correo_instructor  
+            return redirect("crear_clave")
 
+        if password != instructor.password:
+            messages.error(request, "Contraseña incorrecta.")
+            return redirect("instructor")
+
+        # Guardar datos en la sesión
+        request.session["instructor_id"] = instructor.id  
+        request.session["nombre"] = instructor.nombres  # Asegurar que el nombre se almacena
+
+        return redirect("dashboard_instructor")  # Redirigir al dashboard
+
+    return render(request, "instructor.html")
+
+def dashboard_instructor(request):
+    if "instructor_id" not in request.session:
+        return redirect("instructor")  # Si no hay sesión, devolver al login
+
+    return render(request, "instru-login.html")  # Renderizar el dashboard
+
+def crear_clave(request):
+    if request.method == "POST":
+        nueva_password = request.POST.get("password")
+        correo_instructor = request.session.get("user_email")
+
+        if correo_instructor:
+            try:
+                instructor = Instructor.objects.get(correo_instructor=correo_instructor)
+                instructor.password = nueva_password  # ⚠️ Mejor usar hashing aquí
+                instructor.save()
+
+                # Cerrar sesión completamente
+                logout(request)  
+                request.session.flush()  
+
+                messages.success(request, "Contraseña creada con éxito. Ahora puedes iniciar sesión.")
+                return redirect("instructor")  # Redirigir a la página de inicio de sesión
+            except Instructor.DoesNotExist:
+                messages.error(request, "Error al crear la contraseña.")
+                return redirect("crear_clave")
+
+    return render(request, "crear_clave.html")
 
 def logout_instructor(request):
     request.session.flush()  # Elimina toda la sesión
