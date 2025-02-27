@@ -1,0 +1,20 @@
+{% extends "index.html" %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <label for="password">Nueva Clave:</label>
+    <input type="password" id="password" name="password" required>
+
+    <label for="confirm_password">Confirmar Clave:</label>
+    <input type="password" id="confirm_password" name="confirm_password" required>
+
+    <button type="submit">Guardar Clave</button>
+</form>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color: red;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+{% endblock content %}
