@@ -9,13 +9,13 @@
         <h2>Edición de Aprendiz</h2>
         <div class="card">
             <div class="card-body">
-                <form id="edit-aprendiz" method="post" action="{% url 'editar_aprendiz' aprendiz.numero_identificacion %}" enctype="multipart/form-data">
+                <form id="edit-aprendiz" method="post" action="{% url 'editar_aprendiz' aprendiz.numero_documento %}" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.tipo_documento }}" name="tipoDoc" id="tipoDoc" required>
+                        <input type="text" class="form-control" value="{{ aprendiz.tipo_documento.tipo }}" name="tipoDoc" id="tipoDoc" required>
                     </div><br/>
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.numero_identificacion }}" name="numDoc" id="numDoc" readonly required>
+                        <input type="text" class="form-control" value="{{ aprendiz.numero_documento }}" name="numDoc" id="numDoc" readonly required>
                     </div><br/>
                     <div class="form-group">
                         <input type="text" class="form-control" value="{{ aprendiz.nombres }}" name="nombres" id="nombres" required>
@@ -29,8 +29,8 @@
                     <div class="form-group">
                         <select name="rh" class="form-control">
                             {% for grupo in grupos_sanguineos %}
-                                <option value="{{ grupo.id }}" {% if grupo == aprendiz.rh %}selected{% endif %}>
-                                    {{ grupo.nombre }}
+                                <option value="{{ grupo.id }}" {% if grupo == aprendiz.rh_id %}selected{% endif %}>
+                                    {{ grupo.Rh }}
                                 </option>
                             {% endfor %}
                         </select>

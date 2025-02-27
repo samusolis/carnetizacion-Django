@@ -133,7 +133,7 @@ def ficha_select(request, numero):
     # return render(request, "ficha-select.html", {"aprendices": aprendices})
   
 def editar_aprendiz(request, numero_documento):
-    aprendiz = get_object_or_404(Aprendiz, numero_identificacion=numero_documento)
+    aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
 
     if request.method == 'POST':
         aprendiz.tipo_documento = request.POST['tipoDoc']

@@ -47,8 +47,8 @@
                         
                     {% for aprendiz in aprendices %}
                         <tr>
-                            <td>{{ aprendiz.tipo_documento }}</td>
-                            <td>{{ aprendiz.numero_identificacion }}</td>
+                            <td>{{ aprendiz.tipo_documento.tipo }}</td>
+                            <td>{{ aprendiz.numero_documento }}</td>
                             <td>{{ aprendiz.nombres }}</td>
                             <td>{{ aprendiz.apellidos }}</td>
                             <td>{{ aprendiz.rh }}</td>
@@ -61,8 +61,8 @@
                             </td>
                             <td>{{ aprendiz.ficha_id}}</td>  <!-- Muestra el número de ficha -->
                             <td>
-                                {% if aprendiz.numero_identificacion %}
-                                    <a href="{% url 'editar_aprendiz' aprendiz.numero_identificacion %}" class="btn btn-success">Editar</a>
+                                {% if aprendiz.numero_documento %}
+                                    <a href="{% url 'editar_aprendiz' aprendiz.numero_documento %}" class="btn btn-success">Editar</a>
                                 {% else %}
                                     <span>No disponible</span>
                                 {% endif %}</td>
