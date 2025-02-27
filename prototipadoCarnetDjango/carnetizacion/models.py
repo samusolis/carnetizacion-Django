@@ -52,6 +52,7 @@ class Aprendiz(models.Model):
     roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
     ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
     estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
+    foto = models.CharField(max_length=50, unique=True)
 
 class ProgramaEnFormacion(models.Model):
     id = models.AutoField(primary_key=True)
