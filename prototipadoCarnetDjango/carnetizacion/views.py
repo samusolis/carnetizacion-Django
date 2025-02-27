@@ -5,7 +5,7 @@ from django.conf import settings
 import pandas as pd
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.contrib import messages
-from .models import Aprendiz, Rh, Instructor, Ficha
+from .models import Aprendiz, Rh, Instructor, Ficha, TipoDoc, Roll, Estado, Modalidad, ProgramaEnFormacion
 from .forms import UploadFileForm
 from django.http import JsonResponse
 
@@ -21,43 +21,47 @@ def upload_excel(request):
             instructor_id = request.POST.get("instructor_a_cargo")  # Obtener ID del instructor
             ficha_id = request.POST.get("ficha")  # Obtener ID de la ficha
 
-            print(f"Instructor seleccionado: {instructor_id}")  # Verificar que llegue el dato
-            print(f"Ficha seleccionada: {ficha_id}")  # Verificar que llegue la ficha
-
             try:
                 df = pd.read_excel(file, engine="openpyxl", skiprows=10)
-                df.columns = ["tipo_documento", "numero_identificacion", "nombres", "apellidos", "estado"]
+                df.columns = ["tipo_documento", "numero_documento", "nombres", "apellidos", "correo", "estado"]
+                # df.columns = ["tipo_documento", "numero_documento", "nombres", "apellidos", "estado", "correo"]
                 df = df.iloc[1:].reset_index(drop=True)
 
                 aprendices = []
                 instructor = Instructor.objects.filter(id=instructor_id).first()
-                ficha = Ficha.objects.filter(ficha=ficha_id).first()  # Buscar ficha por ID
+                ficha = Ficha.objects.get(ficha=ficha_id)  # Buscar ficha por ID
 
                 for _, row in df.iterrows():
-                    rh = Rh.objects.filter(id=row["rh"]).first() if "rh" in df.columns else None
+                    # Obtener el ID del tipo de documento
+                    tipo_doc = TipoDoc.objects.filter(tipo=row["tipo_documento"]).first()
+                    if not tipo_doc:
+                        return JsonResponse({"error": f"Tipo de documento '{row['tipo_documento']}' no encontrado."}, status=400)
+
+                    # Obtener el ID del estado
+                    estado = Estado.objects.filter(estado=row["estado"]).first()
+                    if not estado:
+                        return JsonResponse({"error": f"Estado '{row['estado']}' no encontrado."}, status=400)
 
                     aprendiz = Aprendiz(
-                        tipo_documento=row["tipo_documento"],
-                        numero_identificacion=row["numero_identificacion"],
+                        tipo_documento=tipo_doc,
+                        numero_documento=row["numero_documento"],
                         nombres=row["nombres"],
                         apellidos=row["apellidos"],
-                        rh=rh,
-                        clave=row.get("clave", None),
-                        instructor_a_cargo=instructor,
-                        ficha=ficha  # Se asigna la ficha aquí
+                        correo=row["correo"],
+                        instructor_cargo=instructor,
+                        ficha=ficha,
+                        estado=estado,
+                        roll_id=1  # Asignando roll_id = 1 automáticamente
                     )
                     aprendices.append(aprendiz)
 
                 Aprendiz.objects.bulk_create(aprendices)
-                print("Aprendices guardados con éxito")
+                return JsonResponse({"mensaje": "Archivo subido correctamente"})
 
-                return JsonResponse({"mensaje": "Archivo subido correctamente", "fichas": list(df.to_dict(orient="records"))})
             except Exception as e:
-                print(f"Error al procesar el archivo: {e}")
                 return JsonResponse({"error": f"Error al procesar el archivo: {e}"}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
-
 ##########################################################################
 
 def verificar_documento(request):
