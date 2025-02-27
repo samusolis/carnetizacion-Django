@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %} ValidarFicha {% endblock %} 
+
+{% block body %}
+<div class="row">  
+    {% comment %} <div class="col-sm-12 col-md-6 col-lg-3 col-xl-3"> 
+        <h2>Mis Fichas</h2>
+        <div class="card">
+             <div class="card-body">
+                <!-- Formulario para subir archivos -->
+                <form id="upload-form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Subir archivo Excel</label>
+                        <input type="file" class="form-control" name="file" id="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Subir Archivo</button>
+                </form>
+
+                <!-- Mensajes de éxito o error -->
+                <div id="mensaje" class="mt-3"></div>
+            </div>
+        </div>
+    </div> {% endcomment %}
+
+    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-9 justify-content container-table"> 
+        <h1>Ficha</h1>
+        <div class="table-content table-responsive py-2">
+            <table class="table table-striped"> 
+                
+                <thead>
+                    Lista de aprendices
+                </thead>
+                <tbody id="fichas-body" class="fichas-body">   
+                    <tr>
+                        <th>T. doc</th> 
+                        <th>N. doc</th> 
+                        <th>Nombres</th> 
+                        <th>Apellidos</th> 
+                        <th>RH</th> 
+                        <th>Foto</th> 
+                        <th>Ficha</th> 
+                        <th>Editar</th>
+                        <th>Eliminar</th>
+                    </tr>
+                        
+                    {% for aprendiz in aprendices %}
+                        <tr>
+                            <td>{{ aprendiz.tipo_documento.tipo }}</td>
+                            <td>{{ aprendiz.numero_documento }}</td>
+                            <td>{{ aprendiz.nombres }}</td>
+                            <td>{{ aprendiz.apellidos }}</td>
+                            <td>{{ aprendiz.rh }}</td>
+                            <td>
+                                {% if aprendiz.foto %}
+                                    <img src="{{ aprendiz.foto.url }}" alt="Foto" width="50">
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </td>
+                            <td>{{ aprendiz.ficha_id}}</td>  <!-- Muestra el número de ficha -->
+                            <td>
+                                {% if aprendiz.numero_documento %}
+                                    <a href="{% url 'editar_aprendiz' aprendiz.numero_documento %}" class="btn btn-success">Editar</a>
+                                {% else %}
+                                    <span>No disponible</span>
+                                {% endif %}</td>
+                            <td><button type="button" class="btn btn-danger">Eliminar</button></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">No hay aprendices registrados.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>   
+    </div>    
+</div>
+
+<!-- Agregar AJAX para actualizar la tabla dinámicamente -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $("#upload-form").on("submit", function(event) {
+        event.preventDefault();  // Evita que la página se recargue
+
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: "{% url 'upload_excel' %}",  // Ajusta la URL si es necesario
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $("#mensaje").html("<p class='text-success'>Archivo subido con éxito</p>");
+                actualizarTabla(response.fichas);
+            },
+            error: function(xhr) {
+                $("#mensaje").html("<p class='text-danger'>Error al subir el archivo</p>");
+            }
+        });
+    });
+
+    function actualizarTabla(fichas) {
+        var tbody = "";
+        fichas.forEach(function(c) {
+            tbody += `<tr>
+                        <td>${c.id}</td>
+                        <td>${c.tipo_documento}</td>
+                        <td>${c.numero_identificacion}</td>
+                        <td>${c.nombres}</td>
+                        <td>${c.apellidos}</td>
+                        <td>${c.rh}</td>
+                        <td><img src="${c.foto}" alt="Foto" width="50"></td>
+                        <td>${c.estado}</td>
+                    </tr>`;
+        });
+        $("#fichas-body").html(tbody);
+    }
+});
+</script>
+{% endblock %}

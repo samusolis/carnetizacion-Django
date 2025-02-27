@@ -1,0 +1,55 @@
+{% extends "admin-log.html" %}
+
+{% block content %}
+
+    <div class="container-create">
+        <h2>Crear Cursos</h2>
+        <button>Programas</button>
+        <button>Lider de Ficha</button>
+        <button>Cargar</button>
+        <a href="{% url "admin_login" %}"><button>Volver</button></a>
+    </div>
+
+    <div class="container-list">
+        <form action="" method="post">
+            <label for="buscar">Busca por Numero de Ficha</label>
+            <input type="text" id="busqueda" name="busqueda">
+            <button type="button" id="buscarFicha" name="buscarFicha">Buscar</button>
+      </form>
+        <table class='table' border=1>
+            <thead>
+              <th scope='col'>Programa</th>
+              <th scope='col'>Ficha</th>
+              <th scope='col'>Lider Ficha</th>
+              <th scope='col'>Opciones</th>
+          </thead>
+          <tbody id="contenido" name="contenido">
+            <tr>
+                <td>hola</td>
+                <td>esto es</td>
+                <td>una prueba</td>
+                <td>de contenido</td>
+            </tr>
+            <tr>
+                <td>hola</td>
+                <td>esto es</td>
+                <td>una prueba</td>
+                <td>de contenido</td>
+            </tr>
+            <tr>
+                <td>hola</td>
+                <td>esto es</td>
+                <td>una prueba</td>
+                <td>de contenido</td>
+            </tr>
+            <tr>
+                <td>hola</td>
+                <td>esto es</td>
+                <td>una prueba</td>
+                <td>de contenido</td>
+            </tr>
+          </tbody>
+          </table>
+    </div>
+    
+{% endblock content %}
