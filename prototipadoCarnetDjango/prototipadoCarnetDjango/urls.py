@@ -31,13 +31,12 @@ urlpatterns = [
     path('mis-fichas/', views.mis_fichas, name="mis_fichas"),
     path('fichas-instru/', views.instru_fichas, name="fichas_instru"),
     path('upload/', views.upload_excel, name="upload_excel"),
-    path('verificar-documento/', views.verificar_documento, name='verificar_documento'),
-    path('carnet/<str:documento>/', views.carnet, name="carnet"),
     
+    path('verificar-documento/', views.verificar_documento, name='numero_documento'),
+    
+    path('carnet/<str:documento>/', views.carnet, name="carnet"),
     path('carnetInstru/', views.carnetInstru, name="carnetInstru"),
     path('carnetTras/', views.carnetTras, name="carnetTras"),
-    
-    
     path('ficha-select/<int:numero>', views.ficha_select, name="ficha_select"),
     path('editar-aprendiz/<int:numero_identificacion>/', views.editar_aprendiz, name="editar_aprendiz"),
     path('ficha-select/<int:numero>/', views.ficha_select, name="ficha_select"),

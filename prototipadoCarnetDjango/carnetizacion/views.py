@@ -64,35 +64,35 @@ def verificar_documento(request):
     mensaje = None  # Inicializamos el mensaje como None
 
     if request.method == "POST":
-        numero_identificacion = request.POST.get('documento', None)
+        numero_documento = request.POST.get('documento', None)
 
-        if numero_identificacion:
+        if numero_documento:
             try:
-                aprendiz = Aprendiz.objects.get(numero_identificacion=numero_identificacion)
-                return redirect('carnet', documento=aprendiz.numero_identificacion)  # Redirige a la vista del carnet
+                aprendiz = Aprendiz.objects.get(numero_documento=numero_documento)
+                return redirect('carnet', documento=aprendiz.numero_documento)  # Redirige a la vista del carnet
             except Aprendiz.DoesNotExist:
                 mensaje = "El número de identificación no existe en nuestra base de datos."
 
     return render(request, 'index.html', {'mensaje': mensaje})  # Volvemos a cargar el mismo template
 
 def carnet(request, documento):
-    aprendiz = get_object_or_404(Aprendiz, numero_identificacion=documento)
+    aprendiz = get_object_or_404(Aprendiz, numero_documento=documento)
 
     # Asegurar que la carpeta de códigos de barras existe
     barcode_dir = os.path.join(settings.MEDIA_ROOT, "barcodes")
     os.makedirs(barcode_dir, exist_ok=True)
 
     # Nombre del archivo SIN EXTENSIÓN
-    barcode_filename = os.path.join(barcode_dir, f"{aprendiz.numero_identificacion}")
+    barcode_filename = os.path.join(barcode_dir, f"{aprendiz.numero_documento}")
 
     # Verificar si el archivo ya existe para no generarlo de nuevo
     if not os.path.exists(f"{barcode_filename}.png"):
         # Generar el código de barras
-        ean = barcode.get('code128', str(aprendiz.numero_identificacion), writer=ImageWriter())
+        ean = barcode.get('code128', str(aprendiz.numero_documento), writer=ImageWriter())
         ean.save(barcode_filename)  # Guarda la imagen sin doble extensión
 
     # Pasar la ruta relativa para mostrarla en la plantilla
-    barcode_url = f"/media/barcodes/{aprendiz.numero_identificacion}.png"
+    barcode_url = f"/media/barcodes/{aprendiz.numero_documento}.png"
 
     return render(request, 'carnetDel.html', {'aprendiz': aprendiz, 'barcode_url': barcode_url})
 
@@ -128,8 +128,8 @@ def ficha_select(request, numero):
     # aprendices = Aprendiz.objects.all()
     # return render(request, "ficha-select.html", {"aprendices": aprendices})
   
-def editar_aprendiz(request, numero_identificacion):
-    aprendiz = get_object_or_404(Aprendiz, numero_identificacion=numero_identificacion)
+def editar_aprendiz(request, numero_documento):
+    aprendiz = get_object_or_404(Aprendiz, numero_identificacion=numero_documento)
 
     if request.method == 'POST':
         aprendiz.tipo_documento = request.POST['tipoDoc']

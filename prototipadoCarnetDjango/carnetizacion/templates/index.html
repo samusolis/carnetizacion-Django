@@ -34,7 +34,7 @@
                     <h2>Aprendiz</h2>
                     <h3>Identifícate</h3>
 
-                    <form method="POST" action="{% url 'verificar_documento' %}">
+                    <form method="POST" action="{% url 'numero_documento' %}">
                         {% csrf_token %}
                         <label for="numId">Número de Identificación:</label>
                         <input type="text" id="documento" name="documento" required>
