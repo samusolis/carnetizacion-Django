@@ -108,7 +108,31 @@ def instructor(request):
     return render (request, 'instructor.html')
 
 def instru_login(request):
-    return render(request, 'instru-login.html')
+    if request.method == "POST":
+        correo = request.POST.get("email")
+        contraseña = request.POST.get("password")
+
+        try:
+            # Comparación directa porque las contraseñas NO están encriptadas
+            instructor = Instructor.objects.get(correo_instructor=correo, password=contraseña)
+
+            # Guardar información en la sesión
+            request.session["nombre"] = instructor.nombres
+            request.session["id_instructor"] = instructor.id
+
+            return redirect("instru_login")  # Redirigir a la misma página o al dashboard
+        except Instructor.DoesNotExist:
+            messages.error(request, "Correo o contraseña incorrectos")  
+
+    return render(request, "instru-login.html")
+
+
+def logout_instructor(request):
+    request.session.flush()  # Elimina toda la sesión
+    messages.success(request, "Sesión cerrada correctamente.")  # Mensaje opcional
+    return redirect("instructor")  # Asegúrate de que este nombre de URL sea correcto
+
+###############################################################################
 
 def administrador(request):
     return render (request, 'administrador.html')

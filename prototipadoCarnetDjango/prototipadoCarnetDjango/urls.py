@@ -26,7 +26,10 @@ urlpatterns = [
     path('',views.index,name="index"),
     path('instructor/', views.instructor, name="instructor"),
     path('administrador/', views.administrador, name="administrador"),
+    
     path('instru-login/', views.instru_login, name="instru_login"),
+    path("logout-instructor/", views.logout_instructor, name="logout_instructor"),
+
     path('admin-login/', views.admin_login, name="admin_login"),
     path('mis-fichas/', views.mis_fichas, name="mis_fichas"),
     path('fichas-instru/', views.instru_fichas, name="fichas_instru"),
