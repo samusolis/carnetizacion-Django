@@ -11,9 +11,18 @@
             <div class="card-body">
                 <form id="edit-aprendiz" method="post" action="{% url 'editar_aprendiz' aprendiz.numero_documento %}" enctype="multipart/form-data">
                     {% csrf_token %}
+
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.tipo_documento.tipo }}" name="tipoDoc" id="tipoDoc" required>
+                        <label for="tipoDoc">Tipo de Documento</label>
+                        <select name="tipoDoc" class="form-control" required>
+                            {% for tipo in tipos_documento %}
+                                <option value="{{ tipo.id }}" {% if tipo.id == aprendiz.tipo_documento.id %}selected{% endif %}>
+                                    {{ tipo.tipo }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div><br/>
+                    
                     <div class="form-group">
                         <input type="text" class="form-control" value="{{ aprendiz.numero_documento }}" name="numDoc" id="numDoc" readonly required>
                     </div><br/>

@@ -160,7 +160,8 @@ def editar_aprendiz(request, numero_documento):
     aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
 
     if request.method == 'POST':
-        aprendiz.tipo_documento = request.POST['tipoDoc']
+        tipo_doc_id = request.POST['tipoDoc']
+        aprendiz.tipo_documento = get_object_or_404(TipoDoc, id=tipo_doc_id)  # Asignar tipo de documento correcto
         aprendiz.nombres = request.POST['nombres']
         aprendiz.apellidos = request.POST['apellidos']
         
@@ -171,14 +172,15 @@ def editar_aprendiz(request, numero_documento):
         aprendiz.save()
         return redirect('ficha_select', numero=aprendiz.ficha.ficha)
 
-    # Obtener todos los grupos sanguíneos para el formulario
+    # Obtener todos los grupos sanguíneos y tipos de documento
     grupos_sanguineos = Rh.objects.all()
-    
+    tipos_documento = TipoDoc.objects.all()
+
     return render(request, 'editar-aprendiz.html', {
         'aprendiz': aprendiz,
-        'grupos_sanguineos': grupos_sanguineos  # Pasar la lista de grupos sanguíneos a la plantilla
+        'grupos_sanguineos': grupos_sanguineos,
+        'tipos_documento': tipos_documento  # Pasar lista de tipos de documento
     })
-
 
 def carnetTras(request):
     return render (request, 'carnetTras.html')
