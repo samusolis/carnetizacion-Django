@@ -32,6 +32,7 @@ urlpatterns = [
     path("logout-instructor/", views.logout_instructor, name="logout_instructor"),
 
     path('admin-login/', views.admin_login, name="admin_login"),
+    
     path('mis-fichas/', views.mis_fichas, name="mis_fichas"),
     path('fichas-instru/', views.instru_fichas, name="fichas_instru"),
     path('crear-clave/', views.crear_clave, name="crear_clave"),

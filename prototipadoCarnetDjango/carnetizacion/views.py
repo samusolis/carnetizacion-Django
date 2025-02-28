@@ -200,11 +200,11 @@ def logout_instructor(request):
 
 ###############################################################################
 
-def administrador(request):
-    return render (request, 'administrador.html')
-
 def admin_login(request):
-    return render(request, 'admin-log.html')
+    if request.method == "POST":
+        correo_admin = request.POST.get("email")
+        password = request.POST.get("password")
+        
 
 def mis_fichas(request):
     return render (request, 'mis_fichas.html')
