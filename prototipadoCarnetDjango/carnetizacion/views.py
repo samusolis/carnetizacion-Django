@@ -253,9 +253,27 @@ def editar_aprendiz(request, numero_documento):
 
 #############################################################################################
 
-def carnetTras(request):
-    return render (request, 'carnetTras.html')
+def carnetInstru(request):
+    instructor_id = request.session.get("instructor_id")  # Obtener el ID del instructor de la sesión
 
+    if not instructor_id:
+        return redirect("instructor")  # Redirigir al login si no está autenticado
+
+    instructor = get_object_or_404(Instructor, id=instructor_id)  # Obtener el instructor logueado
+
+    return render(request, "carnetInstru.html", {"instructor": instructor})
+
+def carnetTras(request):
+    instructor_id = request.session.get("instructor_id")  # Obtener el ID del instructor de la sesión
+
+    if not instructor_id:
+        return redirect("instructor")  # Redirigir al login si no está autenticado
+
+    instructor = get_object_or_404(Instructor, id=instructor_id)  # Obtener el instructor logueado
+
+    return render(request, "carnetTras.html", {"instructor": instructor})
+
+##################################################################################3
 def ver_fichas_admin(request):
     return render(request, 'admin/ver_fichas.html')
 
@@ -279,8 +297,4 @@ def aprobar_registros(request):
 
 def configurar_permisos(request):
     return render(request, 'admin/configurar_permisos.html')
-
-def carnetInstru(request):
-    instructor = Instructor.objects.all()
-    return render(request, 'carnetInstru.html', {"instructor": instructor})
 
