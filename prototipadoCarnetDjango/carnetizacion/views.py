@@ -72,7 +72,6 @@ def upload_excel(request):
 
     return render(request, "upload_excel.html")
 
-
 ##########################################################################
 
 def verificar_documento(request):
@@ -84,7 +83,19 @@ def verificar_documento(request):
         if numero_documento:
             try:
                 aprendiz = Aprendiz.objects.get(numero_documento=numero_documento)
-                return redirect('carnet', documento=aprendiz.numero_documento)  # Redirige a la vista del carnet
+                
+                # Verificamos si tiene RH y foto asignados
+                faltantes = []
+                if not aprendiz.rh:  # Verifica si el campo de RH está vacío o es nulo
+                    faltantes.append("RH")
+                if not aprendiz.foto:  # Verifica si el campo de foto está vacío o es nulo
+                    faltantes.append("foto")
+
+                if faltantes:
+                    mensaje = f"Falta asignar {', '.join(faltantes)} a este usuario."
+                else:
+                    return redirect('carnet', documento=aprendiz.numero_documento)  # Redirige a la vista del carnet
+            
             except Aprendiz.DoesNotExist:
                 mensaje = "El número de identificación no existe en nuestra base de datos."
 
@@ -97,19 +108,24 @@ def carnet(request, documento):
     barcode_dir = os.path.join(settings.MEDIA_ROOT, "barcodes")
     os.makedirs(barcode_dir, exist_ok=True)
 
-    # Nombre del archivo SIN EXTENSIÓN
+    # Nombre del archivo de código de barras
     barcode_filename = os.path.join(barcode_dir, f"{aprendiz.numero_documento}")
 
-    # Verificar si el archivo ya existe para no generarlo de nuevo
+    # Verificar si el archivo ya existe
     if not os.path.exists(f"{barcode_filename}.png"):
-        # Generar el código de barras
         ean = barcode.get('code128', str(aprendiz.numero_documento), writer=ImageWriter())
-        ean.save(barcode_filename)  # Guarda la imagen sin doble extensión
+        ean.save(barcode_filename)
 
-    # Pasar la ruta relativa para mostrarla en la plantilla
+    # URL del código de barras
     barcode_url = f"/media/barcodes/{aprendiz.numero_documento}.png"
 
-    return render(request, 'carnetDel.html', {'aprendiz': aprendiz, 'barcode_url': barcode_url})
+    # Obtener la ficha del aprendiz
+    ficha = aprendiz.ficha.ficha  # Asegúrate de que `numero_ficha` es el campo correcto en tu modelo
+
+    # Generar la URL de la imagen del aprendiz
+    foto_url = f"/media/fotos/{ficha}/{aprendiz.numero_documento}.jpg"
+
+    return render(request, 'carnetDel.html', {'aprendiz': aprendiz, 'barcode_url': barcode_url, 'foto_url': foto_url})
 
 ##########################################################################
 def index(request):
