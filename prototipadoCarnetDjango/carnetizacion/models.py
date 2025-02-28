@@ -1,5 +1,12 @@
+import os
 from django.db import models
 # Create your models here.
+
+def ruta_foto_aprendiz(instance, filename):
+    """Guarda la imagen en media/fotos/{numero_de_ficha}/ con el nombre {numero_documento}.ext"""
+    extension = filename.split('.')[-1]  # Obtener la extensión del archivo
+    nombre_archivo = f"{instance.numero_documento}.{extension}"  # Guardar con el número de documento
+    return os.path.join('fotos', str(instance.ficha.ficha), nombre_archivo)
 
 class Rh(models.Model):
     id = models.AutoField(primary_key=True)
@@ -52,7 +59,7 @@ class Aprendiz(models.Model):
     roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
     ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
     estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
-    foto = models.CharField(max_length=50, unique=True)
+    foto = models.ImageField(upload_to=ruta_foto_aprendiz, null=True, blank=True)
 
 class ProgramaEnFormacion(models.Model):
     id = models.AutoField(primary_key=True)

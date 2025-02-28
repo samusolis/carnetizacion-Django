@@ -7,68 +7,71 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Aprendiz, Rh, Instructor, Ficha, TipoDoc, Roll, Estado, Modalidad, ProgramaEnFormacion
 from .forms import UploadFileForm
+from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
+from django.core.files.storage import default_storage
 
 
 
 # Create your views here.
 #########################################################################
 def upload_excel(request):
-    if request.method == 'POST' and request.FILES.get('file'):
+    if request.method == "POST" and request.FILES.get("file"):
+        excel_file = request.FILES["file"]
+        instructor_id = request.POST.get("instructor_a_cargo")
+        ficha_id = request.POST.get("ficha")
+
         try:
-            # Leer archivo Excel desde la celda 11
-            df = pd.read_excel(request.FILES['file'], skiprows=10)
-
-            # Renombrar columnas según la base de datos
-            df.columns = ['tipo_documento', 'numero_documento', 'nombres', 'apellidos', 'correo', 'estado']
-
-            # Verificar que las columnas esperadas estén presentes
-            expected_columns = {'tipo_documento', 'numero_documento', 'nombres', 'apellidos', 'correo', 'estado'}
-            if not expected_columns.issubset(set(df.columns)):
-                return JsonResponse({"error": "Las columnas del archivo no coinciden con las esperadas"}, status=400)
-
-            # Obtener IDs de las relaciones foráneas
-            tipo_doc_map = {td.tipo: td.id for td in TipoDoc.objects.all()}
-            estado_map = {e.estado: e.id for e in Estado.objects.all()}
-
-            # Convertir valores a los IDs correspondientes
-            df['tipo_documento_id'] = df['tipo_documento'].map(tipo_doc_map)
-            df['estado_id'] = df['estado'].map(estado_map)
-
-            # Rellenar valores faltantes y asignar roll_id = 1 (aprendiz)
-            df['rh_id'] = 1  # Si RH es obligatorio, modificar aquí
-            df['roll_id'] = 1  # Siempre será aprendiz
-            df['ficha_id'] = request.POST.get('ficha')
-            df['instructor_cargo_id'] = request.POST.get('instructor_a_cargo')
-
-            # Verificar que no haya valores nulos en claves foráneas
-            if df[['tipo_documento_id', 'estado_id', 'roll_id', 'ficha_id', 'instructor_cargo_id']].isnull().any().any():
-                return JsonResponse({"error": "Error en los valores de referencia. Verifica tipo de documento, estado, ficha o instructor."}, status=400)
-
-            # Crear objetos en la base de datos
-            registros = [
-                Aprendiz(
-                    nombres=row['nombres'],
-                    apellidos=row['apellidos'],
-                    correo=row['correo'],
-                    numero_documento=row['numero_documento'],
-                    tipo_documento_id=row['tipo_documento_id'],
-                    estado_id=row['estado_id'],
-                    ficha_id=row['ficha_id'],
-                    instructor_cargo_id=row['instructor_cargo_id'],
-                    roll_id=row['roll_id'],
-                )
-                for _, row in df.iterrows()
-            ]
-            Aprendiz.objects.bulk_create(registros)
-
-            return JsonResponse({"mensaje": "Archivo subido con éxito"}, status=200)
-
+            df = pd.read_excel(excel_file, header=None, skiprows=10)  # Leer desde la fila 11
         except Exception as e:
-            return JsonResponse({"error": f"Error al procesar el archivo: {str(e)}"}, status=400)
+            return JsonResponse({"error": f"Error al leer el archivo: {str(e)}"})
 
-    return JsonResponse({"error": "Método no permitido"}, status=405)
+        errores = []
+        for index, row in df.iterrows():
+            try:
+                tipo_doc_str = str(row[0]).strip()
+                numero_documento = str(row[1]).strip()
+                nombres = str(row[2]).strip()
+                apellidos = str(row[3]).strip()
+                correo = str(row[4]).strip()
+                estado_str = str(row[5]).strip()
+
+                tipo_documento = TipoDoc.objects.filter(tipo__iexact=tipo_doc_str.strip()).first()
+                estado = Estado.objects.filter(estado=estado_str).first()
+                ficha = Ficha.objects.filter(ficha=ficha_id).first()
+                instructor = Instructor.objects.filter(id=instructor_id).first()
+                roll = Roll.objects.get(id=1)  # Siempre será 1
+
+                if not all([tipo_documento, estado, ficha, instructor]):
+                    errores.append(f"❌ Error en fila {index + 11}: Referencias no encontradas.")
+                    continue
+
+                aprendiz = Aprendiz(
+                    nombres=nombres,
+                    apellidos=apellidos,
+                    correo=correo,
+                    tipo_documento=tipo_documento,
+                    numero_documento=numero_documento,
+                    instructor_cargo=instructor,
+                    roll=roll,
+                    ficha=ficha,
+                    estado=estado,
+                    rh=None  # Se deja como NULL
+                )
+                aprendiz.save()
+            except IntegrityError:
+                errores.append(f"⚠️ Documento duplicado en fila {index + 11}: {numero_documento}")
+            except Exception as e:
+                errores.append(f"⚠️ Error inesperado en fila {index + 11}: {str(e)}")
+
+        if errores:
+            return JsonResponse({"error": "\n".join(errores)})
+        
+        return JsonResponse({"success": "Archivo subido correctamente."})
+
+    return render(request, "upload_excel.html")
+
 
 ##########################################################################
 
@@ -202,32 +205,37 @@ def ficha_select(request, numero):
     return render(request, 'ficha-select.html', {'aprendices': aprendices, 'numero': numero})
     # aprendices = Aprendiz.objects.all()
     # return render(request, "ficha-select.html", {"aprendices": aprendices})
-  
+#####################################################################################
+
 def editar_aprendiz(request, numero_documento):
     aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
 
     if request.method == 'POST':
         tipo_doc_id = request.POST['tipoDoc']
-        aprendiz.tipo_documento = get_object_or_404(TipoDoc, id=tipo_doc_id)  # Asignar tipo de documento correcto
+        aprendiz.tipo_documento = get_object_or_404(TipoDoc, id=tipo_doc_id)
         aprendiz.nombres = request.POST['nombres']
         aprendiz.apellidos = request.POST['apellidos']
         
-        # Buscar la instancia de Rh correcta antes de asignarla
         rh_id = request.POST['rh']
         aprendiz.rh = get_object_or_404(Rh, id=rh_id)
+
+        # Manejo de la imagen
+        if 'foto' in request.FILES:
+            aprendiz.foto = request.FILES['foto']
 
         aprendiz.save()
         return redirect('ficha_select', numero=aprendiz.ficha.ficha)
 
-    # Obtener todos los grupos sanguíneos y tipos de documento
     grupos_sanguineos = Rh.objects.all()
     tipos_documento = TipoDoc.objects.all()
 
     return render(request, 'editar-aprendiz.html', {
         'aprendiz': aprendiz,
         'grupos_sanguineos': grupos_sanguineos,
-        'tipos_documento': tipos_documento  # Pasar lista de tipos de documento
+        'tipos_documento': tipos_documento
     })
+
+#############################################################################################
 
 def carnetTras(request):
     return render (request, 'carnetTras.html')

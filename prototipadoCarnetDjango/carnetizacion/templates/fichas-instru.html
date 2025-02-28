@@ -130,11 +130,21 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    $("#mensaje").html("<p class='text-success'>Archivo subido con éxito</p>");
-                    actualizarTabla(response.fichas);
+                    if (response.error) {
+                        $("#mensaje").html(
+                            "<div class='alert alert-danger'>" + response.error.replace(/\n/g, "<br>") + "</div>"
+                        );
+                    } else {
+                        $("#mensaje").html(
+                            "<div class='alert alert-success'>" + response.success + "</div>"
+                        );
+                        $("#upload-form")[0].reset(); // Limpiar formulario tras éxito
+                    }
                 },
                 error: function(xhr) {
-                    $("#mensaje").html("<p class='text-danger'>Error al subir el archivo</p>");
+                    $("#mensaje").html(
+                        "<div class='alert alert-danger'>❌ Error al subir el archivo.</div>"
+                    );
                 }
             });
         });

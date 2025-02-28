@@ -54,3 +54,5 @@ urlpatterns = [
     path('aprobar_registros/', views.aprobar_registros, name='aprobar_registros'),
     path('configurar_permisos/', views.configurar_permisos, name='configurar_permisos'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

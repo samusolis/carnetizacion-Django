@@ -35,6 +35,11 @@
                     <div class="form-group">
                         <input type="text" class="form-control" value="{{ aprendiz.ficha_id }}" name="ficha" id="ficha" readonly required>
                     </div><br/>
+                    <!-- Campo para subir la foto -->
+                    <div class="form-group">
+                        <label for="foto">Foto del Aprendiz</label>
+                        <input type="file" name="foto" class="form-control">
+                    </div><br/>
                     <div class="form-group">
                         <select name="rh" class="form-control">
                             {% for grupo in grupos_sanguineos %}
