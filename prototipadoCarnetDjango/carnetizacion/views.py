@@ -254,14 +254,31 @@ def editar_aprendiz(request, numero_documento):
 #############################################################################################
 
 def carnetInstru(request):
-    instructor_id = request.session.get("instructor_id")  # Obtener el ID del instructor de la sesión
+    instructor_id = request.session.get("instructor_id")
 
     if not instructor_id:
         return redirect("instructor")  # Redirigir al login si no está autenticado
 
-    instructor = get_object_or_404(Instructor, id=instructor_id)  # Obtener el instructor logueado
+    instructor = get_object_or_404(Instructor, id=instructor_id)
 
-    return render(request, "carnetInstru.html", {"instructor": instructor})
+    # Asegurar que la carpeta de códigos de barras existe
+    barcode_dir = os.path.join(settings.MEDIA_ROOT, "barcodes")
+    os.makedirs(barcode_dir, exist_ok=True)
+
+    # Nombre del archivo de código de barras
+    barcode_filename = os.path.join(barcode_dir, f"{instructor.numero_identificacion}")
+
+    # Verificar si el archivo ya existe
+    if not os.path.exists(f"{barcode_filename}.png"):
+        ean = barcode.get('code128', str(instructor.numero_identificacion), writer=ImageWriter())
+        ean.save(barcode_filename)
+
+    # URL del código de barras
+    barcode_url = f"/media/barcodes/{instructor.numero_identificacion}.png"
+
+    return render(request, "carnetInstru.html", {"instructor": instructor, "barcode_url": barcode_url})
+
+
 
 def carnetTras(request):
     instructor_id = request.session.get("instructor_id")  # Obtener el ID del instructor de la sesión

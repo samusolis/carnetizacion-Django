@@ -22,15 +22,16 @@
         <div class="right-panel">
           <div class="card">
             <div class="header">
+
               <div class="logo">
-                
+                <img src="{% static 'imagenes/logoSena.png' %}" alt="Logo SENA">
               </div>
+              
               <div class="photo">
                 <img src="{% static 'imagenes/fotoinstru.jpg' %}" alt="foto aprendiz">
               </div>
             </div>
             <div class="info">
-                
               <p>INSTRUCTOR</p>
               <hr>
               <h2>{{ instructor.nombres }}<br>{{ instructor.apellidos }}</h2>
@@ -40,7 +41,7 @@
 
             <div class="barcode">
               <img src="{{ barcode_url }}" alt="Código de barras de {{ instructor.numero_identificacion }}">
-            </div>
+            </div>          
 
             <div class="footer">
               <h3>Regional</h3>

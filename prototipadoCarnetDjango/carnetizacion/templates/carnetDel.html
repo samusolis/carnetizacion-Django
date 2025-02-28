@@ -19,16 +19,14 @@
         <div class="right-panel">
           <div class="card">
             <div class="header">
+              
               <div class="logo">
                 <img src="{% static 'imagenes/logoSena.png' %}" alt="Logo SENA">
               </div>
-              
-
+          
               <div class="photo">
                 <img src="{{ foto_url }}" alt="foto aprendiz">
               </div>
-
-
             </div>
             <div class="info">
               <p>APRENDIZ</p>
@@ -37,9 +35,11 @@
               <p>{{aprendiz.tipo_documento.tipo}} {{ aprendiz.numero_documento }}</p>
               <p>Rh: {{ aprendiz.rh.Rh }}</p>
             </div>
+
             <div class="barcode">
               <img src="{{ barcode_url }}" alt="Código de barras de {{ aprendiz.numero_documento }}">
             </div>
+            
             <div class="footer">
               <h3>Regional</h3>
               <p>Centro de formación o dependencia</p>
