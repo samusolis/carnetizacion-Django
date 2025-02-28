@@ -15,54 +15,61 @@ from django.http import JsonResponse
 # Create your views here.
 #########################################################################
 def upload_excel(request):
-    if request.method == "POST":
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = request.FILES["file"]
-            instructor_id = request.POST.get("instructor_a_cargo")  # Obtener ID del instructor
-            ficha_id = request.POST.get("ficha")  # Obtener ID de la ficha
+    if request.method == 'POST' and request.FILES.get('file'):
+        try:
+            # Leer archivo Excel desde la celda 11
+            df = pd.read_excel(request.FILES['file'], skiprows=10)
 
-            try:
-                df = pd.read_excel(file, engine="openpyxl", skiprows=10)
-                df.columns = ["tipo_documento", "numero_documento", "nombres", "apellidos", "correo", "estado"]
-                # df.columns = ["tipo_documento", "numero_documento", "nombres", "apellidos", "estado", "correo"]
-                df = df.iloc[1:].reset_index(drop=True)
+            # Renombrar columnas según la base de datos
+            df.columns = ['tipo_documento', 'numero_documento', 'nombres', 'apellidos', 'correo', 'estado']
 
-                aprendices = []
-                instructor = Instructor.objects.filter(id=instructor_id).first()
-                ficha = Ficha.objects.get(ficha=ficha_id)  # Buscar ficha por ID
+            # Verificar que las columnas esperadas estén presentes
+            expected_columns = {'tipo_documento', 'numero_documento', 'nombres', 'apellidos', 'correo', 'estado'}
+            if not expected_columns.issubset(set(df.columns)):
+                return JsonResponse({"error": "Las columnas del archivo no coinciden con las esperadas"}, status=400)
 
-                for _, row in df.iterrows():
-                    # Obtener el ID del tipo de documento
-                    tipo_doc = TipoDoc.objects.filter(tipo=row["tipo_documento"]).first()
-                    if not tipo_doc:
-                        return JsonResponse({"error": f"Tipo de documento '{row['tipo_documento']}' no encontrado."}, status=400)
+            # Obtener IDs de las relaciones foráneas
+            tipo_doc_map = {td.tipo: td.id for td in TipoDoc.objects.all()}
+            estado_map = {e.estado: e.id for e in Estado.objects.all()}
 
-                    # Obtener el ID del estado
-                    estado = Estado.objects.filter(estado=row["estado"]).first()
-                    if not estado:
-                        return JsonResponse({"error": f"Estado '{row['estado']}' no encontrado."}, status=400)
+            # Convertir valores a los IDs correspondientes
+            df['tipo_documento_id'] = df['tipo_documento'].map(tipo_doc_map)
+            df['estado_id'] = df['estado'].map(estado_map)
 
-                    aprendiz = Aprendiz(
-                        tipo_documento=tipo_doc,
-                        numero_documento=row["numero_documento"],
-                        nombres=row["nombres"],
-                        apellidos=row["apellidos"],
-                        correo=row["correo"],
-                        instructor_cargo=instructor,
-                        ficha=ficha,
-                        estado=estado,
-                        roll_id=1  # Asignando roll_id = 1 automáticamente
-                    )
-                    aprendices.append(aprendiz)
+            # Rellenar valores faltantes y asignar roll_id = 1 (aprendiz)
+            df['rh_id'] = 1  # Si RH es obligatorio, modificar aquí
+            df['roll_id'] = 1  # Siempre será aprendiz
+            df['ficha_id'] = request.POST.get('ficha')
+            df['instructor_cargo_id'] = request.POST.get('instructor_a_cargo')
 
-                Aprendiz.objects.bulk_create(aprendices)
-                return JsonResponse({"mensaje": "Archivo subido correctamente"})
+            # Verificar que no haya valores nulos en claves foráneas
+            if df[['tipo_documento_id', 'estado_id', 'roll_id', 'ficha_id', 'instructor_cargo_id']].isnull().any().any():
+                return JsonResponse({"error": "Error en los valores de referencia. Verifica tipo de documento, estado, ficha o instructor."}, status=400)
 
-            except Exception as e:
-                return JsonResponse({"error": f"Error al procesar el archivo: {e}"}, status=400)
+            # Crear objetos en la base de datos
+            registros = [
+                Aprendiz(
+                    nombres=row['nombres'],
+                    apellidos=row['apellidos'],
+                    correo=row['correo'],
+                    numero_documento=row['numero_documento'],
+                    tipo_documento_id=row['tipo_documento_id'],
+                    estado_id=row['estado_id'],
+                    ficha_id=row['ficha_id'],
+                    instructor_cargo_id=row['instructor_cargo_id'],
+                    roll_id=row['roll_id'],
+                )
+                for _, row in df.iterrows()
+            ]
+            Aprendiz.objects.bulk_create(registros)
+
+            return JsonResponse({"mensaje": "Archivo subido con éxito"}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": f"Error al procesar el archivo: {str(e)}"}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
 ##########################################################################
 
 def verificar_documento(request):
