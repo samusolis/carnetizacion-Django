@@ -142,6 +142,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración del motor de sesiones
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Guarda sesiones en la base de datos
-SESSION_COOKIE_AGE = 86400  # Expira en 1 día (ajústalo según necesidad)
+SESSION_COOKIE_AGE = 5  # segundos
 SESSION_SAVE_EVERY_REQUEST = True  # Guarda sesión en cada request
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # No expira al cerrar el navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True # No expira al cerrar el navegador
