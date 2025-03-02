@@ -38,9 +38,9 @@ urlpatterns = [
     path('crear-clave/', views.crear_clave, name="crear_clave"),
     path('upload/', views.upload_excel, name="upload_excel"),
     
-    path('verificar-documento/', views.verificar_documento, name='numero_documento'),
-    
+    path('verificar-documento/', views.verificar_documento, name='verificar_documento'),
     path('carnet/<str:documento>/', views.carnet, name="carnet"),
+    
     path('carnetInstru/', views.carnetInstru, name="carnetInstru"),
     path('carnetTras/', views.carnetTras, name="carnetTras"),
     path('ficha-select/<int:numero>', views.ficha_select, name="ficha_select"),

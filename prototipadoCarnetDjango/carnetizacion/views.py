@@ -15,7 +15,7 @@ from django.core.files.storage import default_storage
 
 
 # Create your views here.
-#########################################################################
+# subir excel
 def upload_excel(request):
     if request.method == "POST" and request.FILES.get("file"):
         excel_file = request.FILES["file"]
@@ -72,7 +72,7 @@ def upload_excel(request):
 
     return render(request, "upload_excel.html")
 
-##########################################################################
+# verificar documento
 
 def verificar_documento(request):
     mensaje = None  # Inicializamos el mensaje como None
@@ -127,7 +127,7 @@ def carnet(request, documento):
 
     return render(request, 'carnetDel.html', {'aprendiz': aprendiz, 'barcode_url': barcode_url, 'foto_url': foto_url})
 
-##########################################################################
+
 def index(request):
     return render(request, 'index.html')
 
@@ -198,7 +198,10 @@ def logout_instructor(request):
     messages.success(request, "Sesión cerrada correctamente.")  # Mensaje opcional
     return redirect("instructor")  # Asegúrate de que este nombre de URL sea correcto
 
-###############################################################################
+# administrador
+
+def administrador(request):
+    return render(request, "admnistrador.html")
 
 def admin_login(request):
     if request.method == "POST":
@@ -221,7 +224,8 @@ def ficha_select(request, numero):
     return render(request, 'ficha-select.html', {'aprendices': aprendices, 'numero': numero})
     # aprendices = Aprendiz.objects.all()
     # return render(request, "ficha-select.html", {"aprendices": aprendices})
-#####################################################################################
+
+
 
 def editar_aprendiz(request, numero_documento):
     aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
@@ -251,7 +255,8 @@ def editar_aprendiz(request, numero_documento):
         'tipos_documento': tipos_documento
     })
 
-#############################################################################################
+
+
 
 def carnetInstru(request):
     instructor_id = request.session.get("instructor_id")
@@ -290,7 +295,7 @@ def carnetTras(request):
 
     return render(request, "carnetTras.html", {"instructor": instructor})
 
-##################################################################################3
+
 def ver_fichas_admin(request):
     return render(request, 'admin/ver_fichas.html')
 
