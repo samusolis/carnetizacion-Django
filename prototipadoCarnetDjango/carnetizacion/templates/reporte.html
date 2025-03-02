@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Aprendices</title>
+    <link rel="stylesheet" href="{% static 'css/reporte.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Reporte de Aprendices</h1>
+        <nav>
+            <a href="{% url 'dashboard_instructor' %}">Inicio</a>
+            <a href="{% url 'logout_instructor' %}">Cerrar Sesión</a>
+        </nav>
+    </header>
+
+    <section class="report-container">
+        <h2>Aprendices que han descargado su carnet</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Documento</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
+                    <th>Fecha de Descarga</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aprendiz in aprendices %}
+                <tr>
+                    <td>{{ aprendiz.numero_documento }}</td>
+                    <td>{{ aprendiz.nombres }}</td>
+                    <td>{{ aprendiz.apellidos }}</td>
+                    <td>{{ aprendiz.correo }}</td>
+                    <td>{{ }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="chart-container">
+        <h2>Historial de Carnets Impresos</h2>
+        <canvas id="carnetChart"></canvas>
+    </section>
+
+    <script>
+        var ctx = document.getElementById('carnetChart').getContext('2d');
+        var carnetChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ fechas|safe }},
+                datasets: [{
+                    label: 'Carnets Impresos',
+                    data: {{ cantidad|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
