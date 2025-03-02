@@ -267,7 +267,8 @@ def logout_instructor(request):
 
 # administrador
 
-
+def administrador(request):
+    return render(request, "administrador.html")
 
 def admin_login(request):
     if request.method == "POST":
