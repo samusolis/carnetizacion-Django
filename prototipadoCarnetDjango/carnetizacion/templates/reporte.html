@@ -9,16 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Reporte de Aprendices</h1>
-        <nav>
-            <a href="{% url 'dashboard_instructor' %}">Inicio</a>
-            <a href="{% url 'logout_instructor' %}">Cerrar Sesión</a>
+    <header>  
+        <nav class="navbar">
+            <a href="{% url 'dashboard_instructor' %}" class="nav-link">Inicio</a>
+            <a href="{% url 'logout_instructor' %}" class="nav-link logout">Cerrar Sesión</a>
         </nav>
+        <h1>Reporte de Aprendices</h1>
     </header>
 
     <section class="report-container">
-        <h2>Aprendices que han descargado su carnet</h2>
+        <h2>Aprendices que se han subido a la base de datos:</h2>
+        
+        <!-- Checkbox para filtrar aprendices -->
+        <form method="GET">
+            <label for="ficha">Filtrar por ficha:</label>
+            <select name="ficha" id="ficha">
+                <option value="">-- Todas las fichas --</option>
+                {% for ficha in fichas %}
+                    <option value="{{ ficha.ficha }}" {% if ficha.ficha|stringformat:"s" == ficha_id %}selected{% endif %}>
+                        {{ ficha.nombre_ficha }} (ID: {{ ficha.ficha }})
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit">Filtrar</button>
+        </form>
+        
         <table>
             <thead>
                 <tr>
@@ -36,7 +51,11 @@
                     <td>{{ aprendiz.nombres }}</td>
                     <td>{{ aprendiz.apellidos }}</td>
                     <td>{{ aprendiz.correo }}</td>
-                    <td>{{ }}</td>
+                    <td>{{ aprendiz.fecha_descarga }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No hay aprendices en la base de datos.</td>
                 </tr>
                 {% endfor %}
             </tbody>

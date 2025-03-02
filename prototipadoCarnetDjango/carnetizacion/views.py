@@ -19,20 +19,27 @@ import unicodedata
 #reportes
 
 def reporte_aprendices(request):
-    # Obtener los aprendices que han descargado su carnet
-    aprendices = Aprendiz.objects.filter(fecha_descarga__isnull=False)
+    ficha_id = request.GET.get("ficha")  # Obtener el ID de la ficha seleccionada
+    fichas = Ficha.objects.all()  # Obtener todas las fichas para el filtro
 
-    # Datos para el gráfico
-    fechas = [aprendiz.fecha_descarga.strftime('%Y-%m-%d') for aprendiz in aprendices]
-    cantidad = [1 for _ in aprendices]  # Cantidad de carnets por fecha
+    if ficha_id:
+        aprendices = Aprendiz.objects.filter(ficha_id=ficha_id)  # Filtrar por ficha seleccionada
+    else:
+        aprendices = Aprendiz.objects.all()  # Mostrar todos los aprendices si no se filtra
+
+    # Datos para el gráfico (solo fechas con descargas)
+    fechas = [aprendiz.fecha_descarga.strftime('%Y-%m-%d') for aprendiz in aprendices if aprendiz.fecha_descarga]
+    cantidad = [1 for _ in fechas]
 
     context = {
         'aprendices': aprendices,
+        'fichas': fichas,
+        'ficha_id': ficha_id,  # Para mantener la selección en el formulario
         'fechas': fechas,
         'cantidad': cantidad,
     }
 
-    return render(request, 'reporte.html', context)
+    return render(request, "reporte.html", context)
 
 
 # subir excel

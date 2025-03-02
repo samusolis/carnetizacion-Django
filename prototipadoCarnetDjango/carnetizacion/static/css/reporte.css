@@ -32,7 +32,7 @@ th, td {
 }
 
 th {
-    background-color: #007bff;
+    background-color: #39a900;
     color: white;
 }
 
@@ -41,4 +41,36 @@ img {
     margin: 20px auto;
     max-width: 100%;
     border-radius: 5px;
+}
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #39a900;
+    padding: 15px 20px;
+    border-radius: 8px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px 15px;
+    transition: background 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+.logout {
+    background-color: red;
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.logout:hover {
+    background-color: darkred;
 }
