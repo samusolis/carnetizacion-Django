@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %} editar Aprendiz {% endblock %} 
+{% block title %} Editar Aprendiz {% endblock %} 
 
 {% block body %}
 
@@ -35,11 +35,30 @@
                     <div class="form-group">
                         <input type="text" class="form-control" value="{{ aprendiz.ficha_id }}" name="ficha" id="ficha" readonly required>
                     </div><br/>
-                    <!-- Campo para subir la foto -->
+                    
+                    <!-- Campo para subir la foto manualmente -->
                     <div class="form-group">
                         <label for="foto">Foto del Aprendiz</label>
                         <input type="file" name="foto" class="form-control">
                     </div><br/>
+
+                    <!-- Botón para activar la cámara -->
+                    <div class="form-group text-center">
+                        <button type="button" class="btn btn-primary" onclick="activarCamara()">Activar Cámara</button>
+                    </div><br/>
+
+                    <!-- Vista previa de la cámara y captura de foto -->
+                    <div class="form-group text-center">
+                        <video id="video" width="320" height="240" autoplay style="display:none; border: 1px solid #000;"></video>
+                        <canvas id="canvas" width="132" height="170" style="display:none; border: 1px solid #000;"></canvas>
+                        <input type="hidden" name="foto_base64" id="foto_base64">
+                    </div><br/>
+
+                    <!-- Botón para tomar la foto -->
+                    <div class="form-group text-center">
+                        <button type="button" class="btn btn-success" id="btn-capturar" style="display:none;" onclick="capturarFoto()">Capturar Foto</button>
+                    </div><br/>
+
                     <div class="form-group">
                         <select name="rh" class="form-control">
                             {% for grupo in grupos_sanguineos %}
@@ -55,5 +74,73 @@
         </div>
     </div>
 </div>
+
+<!-- Script para activar la cámara y capturar la imagen -->
+<script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let context = canvas.getContext('2d');
+    let btnCapturar = document.getElementById('btn-capturar');
+    let fotoBase64 = document.getElementById('foto_base64');
+    let streamActivo = null;
+
+    function activarCamara() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                streamActivo = stream;
+                video.srcObject = stream;
+                video.style.display = "block";
+                btnCapturar.style.display = "block"; // Mostrar el botón de captura
+            })
+            .catch(function (err) {
+                console.log("Error al acceder a la cámara: " + err);
+            });
+    }
+
+    function capturarFoto() {
+        // Definir las dimensiones exactas de la foto: 132x170 (equivalente a 35x45mm)
+        let targetWidth = 132;
+        let targetHeight = 170;
+
+        // Obtener el tamaño real del video
+        let videoWidth = video.videoWidth;
+        let videoHeight = video.videoHeight;
+
+        // Calcular el área de recorte para mantener la proporción
+        let aspectRatio = targetWidth / targetHeight;
+        let sourceWidth, sourceHeight, offsetX, offsetY;
+
+        if (videoWidth / videoHeight > aspectRatio) {
+            // Si el video es más ancho que la proporción objetivo, recortar los lados
+            sourceHeight = videoHeight;
+            sourceWidth = videoHeight * aspectRatio;
+            offsetX = (videoWidth - sourceWidth) / 2;
+            offsetY = 0;
+        } else {
+            // Si el video es más alto que la proporción objetivo, recortar arriba y abajo
+            sourceWidth = videoWidth;
+            sourceHeight = videoWidth / aspectRatio;
+            offsetX = 0;
+            offsetY = (videoHeight - sourceHeight) / 2;
+        }
+
+        // Dibujar la imagen en el canvas con las proporciones corregidas
+        context.drawImage(video, offsetX, offsetY, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight);
+
+        // Ocultar la cámara y mostrar la foto tomada
+        video.style.display = "none";
+        canvas.style.display = "block";
+        btnCapturar.style.display = "none"; // Ocultar botón de captura después de tomar la foto
+
+        // Guardar imagen en base64 para enviarla al servidor
+        fotoBase64.value = canvas.toDataURL("image/png");
+
+        // Detener la cámara después de la captura
+        if (streamActivo) {
+            let tracks = streamActivo.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+    }
+</script>
 
 {% endblock %}

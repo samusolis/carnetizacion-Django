@@ -1,6 +1,8 @@
 import os
 from django.db import models
 from django.core.files.storage import default_storage
+import base64
+from django.core.files.base import ContentFile  # Import necesario para manejar archivos base64
 
 # Create your models here.
 
@@ -65,8 +67,9 @@ class Aprendiz(models.Model):
     estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
     foto = models.ImageField(upload_to=ruta_foto_aprendiz, null=True, blank=True)
 
+    # Modificación para permitir guardar imágenes en base64 desde el formulario de edición
     def save(self, *args, **kwargs):
-        """Elimina la imagen anterior antes de guardar una nueva"""
+        """Elimina la imagen anterior antes de guardar una nueva y maneja imágenes en base64"""
         if self.pk:  # Si el objeto ya existe en la base de datos
             try:
                 obj = Aprendiz.objects.get(pk=self.pk)
@@ -75,7 +78,14 @@ class Aprendiz(models.Model):
                         os.remove(obj.foto.path)
             except Aprendiz.DoesNotExist:
                 pass  # Si no existe el objeto previo, no hacemos nada
-        
+
+        # Modificación: Guardar imagen desde base64 si se proporciona
+        if isinstance(self.foto, str) and self.foto.startswith("data:image"):
+            formato, imgstr = self.foto.split(';base64,')
+            extension = formato.split('/')[-1]
+            nombre_archivo = f"{self.numero_documento}.{extension}"
+            self.foto = ContentFile(base64.b64decode(imgstr), name=nombre_archivo)
+
         super().save(*args, **kwargs)
 
 ################################################################

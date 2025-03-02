@@ -11,7 +11,8 @@ from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
-
+from django.core.files.base import ContentFile 
+import base64
 
 
 # Create your views here.
@@ -242,7 +243,24 @@ def editar_aprendiz(request, numero_documento):
         # Manejo de la imagen
         if 'foto' in request.FILES:
             aprendiz.foto = request.FILES['foto']
+#############################################################################################
+        foto_base64 = request.POST.get("foto_base64")
+        if foto_base64:
+            formato, imgstr = foto_base64.split(";base64,")  # Separar metadatos
+            ext = formato.split("/")[-1]  # Obtener extensión (png o jpg)
+            img_data = base64.b64decode(imgstr)  # Decodificar la imagen
 
+            # Guardar la imagen en la carpeta de aprendices dentro de MEDIA
+            file_name = f"{numero_documento}.{ext}"
+            file_path = os.path.join(settings.MEDIA_ROOT, "aprendices", file_name)
+
+            # Guardar imagen en la carpeta correspondiente
+            with open(file_path, "wb") as f:
+                f.write(img_data)
+
+            # Asignar la ruta de la imagen al campo del aprendiz
+            aprendiz.foto.name = f"aprendices/{file_name}"
+#############################################################################################
         aprendiz.save()
         return redirect('ficha_select', numero=aprendiz.ficha.ficha)
 
@@ -319,4 +337,23 @@ def aprobar_registros(request):
 
 def configurar_permisos(request):
     return render(request, 'admin/configurar_permisos.html')
+
+#############indicador formato para tomar la foto############
+    if request.method == "POST":
+        aprendiz.nombres = request.POST["nombres"]
+        aprendiz.apellidos = request.POST["apellidos"]
+
+        if "foto" in request.FILES:
+            aprendiz.foto = request.FILES["foto"]
+
+        if "foto_base64" in request.POST:  # Si la imagen viene desde la cámara
+            format, imgstr = request.POST["foto_base64"].split(";base64,")
+            ext = format.split("/")[-1]
+            aprendiz.foto.save(f"{aprendiz.numero_documento}.{ext}", ContentFile(base64.b64decode(imgstr)), save=True)
+
+        aprendiz.save()
+        return redirect("alguna_vista")
+
+    return render(request, "editar_aprendiz.html", {"aprendiz": aprendiz})
+#################################################################################################
 
