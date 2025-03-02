@@ -3,6 +3,7 @@ from django.db import models
 from django.core.files.storage import default_storage
 import base64
 from django.core.files.base import ContentFile  # Import necesario para manejar archivos base64
+from django.utils import timezone
 
 # Create your models here.
 
@@ -56,7 +57,7 @@ class Aprendiz(models.Model):
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
     rh = models.ForeignKey(Rh, on_delete=models.SET_NULL, null=True, blank=True)
-    correo = models.CharField(max_length=100)
+    correo = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     tipo_documento = models.ForeignKey(TipoDoc, on_delete=models.CASCADE)
@@ -66,6 +67,7 @@ class Aprendiz(models.Model):
     ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
     estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
     foto = models.ImageField(upload_to=ruta_foto_aprendiz, null=True, blank=True)
+    fecha_descarga = models.DateTimeField(default=timezone.now)
 
     # Modificación para permitir guardar imágenes en base64 desde el formulario de edición
     def save(self, *args, **kwargs):

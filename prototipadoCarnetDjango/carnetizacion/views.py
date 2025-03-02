@@ -13,10 +13,47 @@ from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile 
 import base64
-
+from django.utils import timezone
+import unicodedata
 
 # Create your views here.
+
+#reportes
+
+def reporte_aprendices(request):
+    ficha_id = request.GET.get("ficha")  # Obtener el ID de la ficha seleccionada
+    fichas = Ficha.objects.all()  # Obtener todas las fichas para el filtro
+
+    if ficha_id:
+        aprendices = Aprendiz.objects.filter(ficha_id=ficha_id)  # Filtrar por ficha seleccionada
+    else:
+        aprendices = Aprendiz.objects.all()  # Mostrar todos los aprendices si no se filtra
+
+    # Datos para el gráfico (solo fechas con descargas)
+    fechas = [aprendiz.fecha_descarga.strftime('%Y-%m-%d') for aprendiz in aprendices if aprendiz.fecha_descarga]
+    cantidad = [1 for _ in fechas]
+
+    context = {
+        'aprendices': aprendices,
+        'fichas': fichas,
+        'ficha_id': ficha_id,  # Para mantener la selección en el formulario
+        'fechas': fechas,
+        'cantidad': cantidad,
+    }
+
+    return render(request, "reporte.html", context)
+
+
 # subir excel
+def generar_correo(nombres, apellidos):
+    # Normalizar nombres y apellidos (eliminar tildes y caracteres especiales)
+    nombres = unicodedata.normalize('NFKD', nombres).encode('ascii', 'ignore').decode('ascii')
+    apellidos = unicodedata.normalize('NFKD', apellidos).encode('ascii', 'ignore').decode('ascii')
+
+    # Crear el correo electrónico
+    correo = f"{nombres.lower().replace(' ', '.')}.{apellidos.lower().replace(' ', '.')}@soy.sena.edu.co"
+    return correo
+
 def upload_excel(request):
     if request.method == "POST" and request.FILES.get("file"):
         excel_file = request.FILES["file"]
@@ -24,47 +61,76 @@ def upload_excel(request):
         ficha_id = request.POST.get("ficha")
 
         try:
-            df = pd.read_excel(excel_file, header=None, skiprows=10)  # Leer desde la fila 11
+            # Leer el archivo Excel desde la fila 11 (skiprows=10)
+            df = pd.read_excel(excel_file, header=None, skiprows=10)
         except Exception as e:
             return JsonResponse({"error": f"Error al leer el archivo: {str(e)}"})
 
         errores = []
         for index, row in df.iterrows():
             try:
-                tipo_doc_str = str(row[0]).strip()
-                numero_documento = str(row[1]).strip()
-                nombres = str(row[2]).strip()
-                apellidos = str(row[3]).strip()
-                correo = str(row[4]).strip()
-                estado_str = str(row[5]).strip()
+                # Convertir la fila a una lista y procesar los valores
+                row = row.tolist()  # Convertir la fila a una lista
 
-                tipo_documento = TipoDoc.objects.filter(tipo__iexact=tipo_doc_str.strip()).first()
+                # Asegurarse de que la fila tenga al menos 5 columnas
+                if len(row) < 5:
+                    error_msg = f"❌ Error en fila {index + 11}: La fila no tiene suficientes columnas."
+                    errores.append(error_msg)
+                    continue
+
+                # Asignar valores a las columnas correctas
+                tipo_doc_str = str(row[0]).strip() if pd.notna(row[0]) else None
+                numero_documento = str(row[1]).strip() if pd.notna(row[1]) else None
+                nombres = str(row[2]).strip() if pd.notna(row[2]) else None
+                apellidos = str(row[3]).strip() if pd.notna(row[3]) else None
+                estado_str = str(row[4]).strip() if pd.notna(row[4]) else "EN FORMACION"  # Columna 4 es el estado
+
+                # Validar que los campos obligatorios no estén vacíos
+                if not all([tipo_doc_str, numero_documento, nombres, apellidos]):
+                    error_msg = f"❌ Error en fila {index + 11}: Campos obligatorios vacíos."
+                    errores.append(error_msg)
+                    continue
+
+                # Verificar referencias en la base de datos
+                tipo_documento = TipoDoc.objects.filter(tipo__iexact=tipo_doc_str).first()
                 estado = Estado.objects.filter(estado=estado_str).first()
                 ficha = Ficha.objects.filter(ficha=ficha_id).first()
                 instructor = Instructor.objects.filter(id=instructor_id).first()
                 roll = Roll.objects.get(id=1)  # Siempre será 1
 
+                # Validar que todas las referencias existan
                 if not all([tipo_documento, estado, ficha, instructor]):
-                    errores.append(f"❌ Error en fila {index + 11}: Referencias no encontradas.")
+                    error_msg = f"❌ Error en fila {index + 11}: Referencias no encontradas."
+                    errores.append(error_msg)
                     continue
 
+                # Verificar si el número de documento ya existe en la base de datos
+                if Aprendiz.objects.filter(numero_documento=numero_documento).exists():
+                    error_msg = f"⚠️ Documento duplicado en fila {index + 11}: {numero_documento}"
+                    errores.append(error_msg)
+                    continue
+
+                # Generar un correo electrónico automáticamente
+                correo = generar_correo(nombres, apellidos)
+
+                # Crear el objeto Aprendiz
                 aprendiz = Aprendiz(
                     nombres=nombres,
                     apellidos=apellidos,
-                    correo=correo,
+                    correo=correo,  # Correo generado automáticamente
                     tipo_documento=tipo_documento,
                     numero_documento=numero_documento,
                     instructor_cargo=instructor,
                     roll=roll,
                     ficha=ficha,
                     estado=estado,
-                    rh=None  # Se deja como NULL
+                    rh=None,  # Se deja como NULL
+                    fecha_descarga=timezone.now()  # Fecha y hora actual
                 )
                 aprendiz.save()
-            except IntegrityError:
-                errores.append(f"⚠️ Documento duplicado en fila {index + 11}: {numero_documento}")
             except Exception as e:
-                errores.append(f"⚠️ Error inesperado en fila {index + 11}: {str(e)}")
+                error_msg = f"⚠️ Error inesperado en fila {index + 11}: {str(e)}"
+                errores.append(error_msg)
 
         if errores:
             return JsonResponse({"error": "\n".join(errores)})

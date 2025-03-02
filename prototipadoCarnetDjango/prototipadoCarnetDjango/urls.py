@@ -29,6 +29,10 @@ urlpatterns = [
     
     path('instru-login/', views.instru_login, name="instru_login"),
     path("dashboard/", views.dashboard_instructor, name="dashboard_instructor"),
+    
+    path('reporte_aprendices/', views.reporte_aprendices, name='reporte_aprendices'),
+    
+    
     path("logout-instructor/", views.logout_instructor, name="logout_instructor"),
 
     path('admin-login/', views.admin_login, name="admin_login"),
