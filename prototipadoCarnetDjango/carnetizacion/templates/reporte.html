@@ -19,7 +19,8 @@
 
     <section class="report-container">
         <h2>Aprendices que se han subido a la base de datos:</h2>
-        
+        <button id="descargar-excel" class="btn-excel">Descargar Excel</button>
+
         <!-- Checkbox para filtrar aprendices -->
         <form method="GET">
             <label for="ficha">Filtrar por ficha:</label>
@@ -91,5 +92,12 @@
             }
         });
     </script>
+    <script>
+        document.getElementById("descargar-excel").addEventListener("click", function () {
+            let fichaSeleccionada = document.getElementById("ficha").value;
+            let url = "{% url 'descargar_reporte_aprendices' %}?ficha=" + fichaSeleccionada;
+            window.location.href = url;
+        });
+    </script>    
 </body>
 </html>

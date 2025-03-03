@@ -21,7 +21,9 @@ from django.conf.urls.static import static
 #importar app con mis vistas
 from carnetizacion import views
 
+
 urlpatterns = [
+    path("descargar_reporte_aprendices/", views.descargar_reporte_aprendices, name="descargar_reporte_aprendices"),
     path('admin/', admin.site.urls, name="admin_site"),
     path('',views.index,name="index"),
     path('instructor/', views.instructor, name="instructor"),

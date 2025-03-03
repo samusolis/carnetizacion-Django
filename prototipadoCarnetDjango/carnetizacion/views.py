@@ -17,6 +17,10 @@ import errno
 from django.utils import timezone
 import unicodedata
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.utils.timezone import make_naive
+from io import BytesIO
+from carnetizacion.models import Aprendiz, Ficha  # Asegúrate de importar los modelos
 
 # Create your views here.
 
@@ -44,6 +48,107 @@ def reporte_aprendices(request):
     }
 
     return render(request, "reporte.html", context)
+
+def descargar_reporte_aprendices(request):
+    ficha_id = request.GET.get("ficha", None)
+
+    # Filtrar aprendices
+    aprendices = Aprendiz.objects.all()
+    ficha_info = None
+
+    if ficha_id:
+        aprendices = aprendices.filter(ficha_id=ficha_id)
+        ficha_info = Ficha.objects.filter(ficha=ficha_id).first()
+
+    # Crear DataFrame con los datos de los aprendices
+    data = []
+    for aprendiz in aprendices:
+        fecha_descarga_naive = make_naive(aprendiz.fecha_descarga).date() if aprendiz.fecha_descarga else ""
+        data.append([
+            aprendiz.numero_documento,
+            aprendiz.nombres,
+            aprendiz.apellidos,
+            aprendiz.correo,
+            fecha_descarga_naive  # Convertir a formato fecha sin zona horaria
+        ])
+
+    df = pd.DataFrame(data, columns=["Documento", "Nombre", "Apellido", "Correo", "Fecha de Descarga"])
+
+    # Crear respuesta HTTP con Excel
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Aprendices", startrow=5)  # Mover la tabla hacia abajo
+
+        # Obtener workbook y worksheet
+        workbook = writer.book
+        worksheet = writer.sheets["Aprendices"]
+
+        # Formatos para encabezado
+        header_format = workbook.add_format({
+            "bold": True,
+            "text_wrap": True,
+            "valign": "vcenter",
+            "fg_color": "#4472C4",  # Azul similar al SENA
+            "font_color": "white",
+            "border": 1
+        })
+
+        title_format = workbook.add_format({
+            "bold": True,
+            "font_size": 14,
+            "align": "center",
+            "valign": "vcenter"
+        })
+
+        subtitle_format = workbook.add_format({
+            "bold": True,
+            "font_size": 12,
+            "align": "left",
+            "valign": "vcenter"
+        })
+
+        cell_format = workbook.add_format({
+            "border": 1
+        })
+
+        date_format = workbook.add_format({
+            "num_format": "yyyy-mm-dd",
+            "border": 1
+        })
+
+        # Agregar encabezado personalizado
+        ficha_nombre = ficha_info.nombre_ficha if ficha_info else "Desconocido"
+        
+        programa_formacion = ProgramaEnFormacion.objects.filter(ficha=ficha_info).first()
+        nombre_programa = programa_formacion.nombre.nombre_ficha if programa_formacion else "No especificado"
+
+        
+        instructor_nombre = f"{programa_formacion.instructor.nombres} {programa_formacion.instructor.apellidos}" if programa_formacion else "No especificado"
+
+        worksheet.merge_range("A1:E1", "Reporte de Aprendices", title_format)
+        worksheet.write("A3", f"Número de Ficha: {ficha_id or 'No especificado'}", subtitle_format)
+        worksheet.write("A4", f"Programa de Formación: {programa_formacion}", subtitle_format)
+        worksheet.write("A5", f"Instructor: {instructor}", subtitle_format)
+
+        # Aplicar formato a los encabezados de la tabla
+        for col_num, value in enumerate(df.columns):
+            worksheet.write(5, col_num, value, header_format)  # Escribir títulos en la fila 6
+            worksheet.set_column(col_num, col_num, 20)  # Ajustar ancho
+
+        # Aplicar formato a las celdas de la tabla
+        for row_num, row_data in enumerate(data, start=6):  # Empezar después del encabezado
+            for col_num, cell_data in enumerate(row_data):
+                if col_num == 4 and cell_data:  # Columna de fecha
+                    worksheet.write_datetime(row_num, col_num, cell_data, date_format)
+                else:
+                    worksheet.write(row_num, col_num, cell_data, cell_format)
+
+    # Preparar respuesta
+    output.seek(0)
+    response = HttpResponse(output.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = "attachment; filename=reporte_aprendices.xlsx"
+    
+    return response
 
 
 # subir excel Aprendices
