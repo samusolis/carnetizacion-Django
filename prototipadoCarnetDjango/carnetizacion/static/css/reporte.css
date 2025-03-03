@@ -36,22 +36,28 @@ th {
     color: white;
 }
 
-img {
-    display: block;
-    margin: 20px auto;
-    max-width: 100%;
-    border-radius: 5px;
-}
 .navbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: center; /* Centra los elementos verticalmente */
+    justify-content: space-between; /* Separa los elementos izquierda/derecha */
+    padding: 10px 20px;
     background-color: #39a900;
-    padding: 15px 20px;
     border-radius: 8px;
 }
 
-.nav-link {
+.navbar img {
+    width: 120px; /* Ajusta el tamaño de la imagen */
+    height: auto;
+    max-height: 100px;
+    margin-right: 10px; /* Espaciado entre la imagen y el botón */
+}
+
+.navbar .nav-left {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .nav-link {
     text-decoration: none;
     color: white;
     font-size: 16px;
@@ -60,13 +66,14 @@ img {
     transition: background 0.3s ease;
 }
 
+
 .nav-link:hover {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 5px;
 }
 
 .logout {
-    background-color: red;
+    background-color: #00304d;
     padding: 10px 15px;
     border-radius: 5px;
 }

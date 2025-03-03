@@ -41,6 +41,7 @@
                         <th>RH</th> 
                         <th>Foto</th> 
                         <th>Ficha</th> 
+                        <th>Estado</th> 
                         <th>Editar</th>
                         <th>Eliminar</th>
                     </tr>
@@ -60,6 +61,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ aprendiz.ficha_id}}</td>  <!-- Muestra el número de ficha -->
+                            <td>{{ aprendiz.estado.estado}}</td>  <!-- Muestra el número de ficha -->
                             <td>
                                 {% if aprendiz.numero_documento %}
                                     <a href="{% url 'editar_aprendiz' aprendiz.numero_documento %}" class="btn btn-success">Editar</a>

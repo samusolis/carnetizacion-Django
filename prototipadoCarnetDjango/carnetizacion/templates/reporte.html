@@ -11,9 +11,13 @@
 <body>
     <header>  
         <nav class="navbar">
-            <a href="{% url 'dashboard_instructor' %}" class="nav-link">Inicio</a>
+            <div class="nav-left">
+                <img src="{% static 'imagenes/logoSena-blanco.png' %}" alt="Logo">
+                <a href="{% url 'dashboard_instructor' %}" class="nav-link">Atrás</a>
+            </div>
             <a href="{% url 'logout_instructor' %}" class="nav-link logout">Cerrar Sesión</a>
         </nav>
+        
         <h1>Reporte de Aprendices</h1>
     </header>
 
@@ -64,7 +68,7 @@
     </section>
 
     <section class="chart-container">
-        <h2>Historial de Carnets Impresos</h2>
+        <h2>Estadisticas de Carnets Impresos</h2>
         <canvas id="carnetChart"></canvas>
     </section>
 
