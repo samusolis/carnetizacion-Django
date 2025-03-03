@@ -4,6 +4,7 @@ from django.core.files.storage import default_storage
 import base64
 from django.core.files.base import ContentFile  # Import necesario para manejar archivos base64
 from django.utils import timezone
+from django.conf import settings
 
 # Create your models here.
 
