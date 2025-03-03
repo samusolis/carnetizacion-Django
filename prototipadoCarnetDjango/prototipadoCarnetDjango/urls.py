@@ -32,7 +32,10 @@ urlpatterns = [
     path('admin_dashboard/', views.admin_dashboard, name="admin_dashboard"),
     path('admin-login/', views.admin_login, name="admin_login"),
     path('gestionar-usuarios/', views.gestionar_usuarios, name='gestionar_usuarios'),
-     path("subir_instructores/", views.subir_instructores, name="subir_instructores"),
+    path('gestionar-fichas/', views.gestionar_fichas, name='gestionar_fichas'),
+    path('gestionar-programas/', views.gestionar_programas, name="gestionar_programas"),
+    path("subir_instructores/", views.subir_instructores, name="subir_instructores"),
+    path('subir-fichas/', views.subir_fichas, name='subir_fichas'),
     
     path('instru-login/', views.instru_login, name="instru_login"),
     path("dashboard/", views.dashboard_instructor, name="dashboard_instructor"),

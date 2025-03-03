@@ -29,10 +29,14 @@ class Modalidad(models.Model):
     modalidad = models.CharField(max_length=50)
 
 class Ficha(models.Model):
-    ficha = models.CharField(primary_key=True, max_length=20)
+    ficha = models.CharField(primary_key=True, max_length=20)  # Número de ficha como clave primaria
     nombre_ficha = models.CharField(max_length=100)
     fecha_inicio = models.CharField(max_length=50)
-    modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE)
+    modalidad = models.ForeignKey('Modalidad', on_delete=models.CASCADE)
+    instructores = models.ManyToManyField('Instructor', related_name='fichas')  # Relación muchos a muchos
+
+    def __str__(self):
+        return f"{self.ficha} - {self.nombre_ficha}"
 
 class Instructor(models.Model):
     id = models.AutoField(primary_key=True)
@@ -42,8 +46,11 @@ class Instructor(models.Model):
     password = models.CharField(max_length=100)
     numero_identificacion = models.CharField(max_length=50, unique=True)
     numero_telefono = models.CharField(max_length=20, null=True, blank=True)
-    rh = models.ForeignKey(Rh, on_delete=models.SET_NULL, null=True)
-    roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
+    rh = models.ForeignKey('Rh', on_delete=models.SET_NULL, null=True)
+    roll = models.ForeignKey('Roll', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.nombres} {self.apellidos}"
 
 #######################################################################################
 

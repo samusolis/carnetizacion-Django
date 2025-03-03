@@ -1,0 +1,74 @@
+/* Permitir scroll en toda la página */
+body {
+    overflow: auto; /* Agrega scroll si es necesario */
+    height: 100vh; /* Usa toda la altura de la ventana */
+    margin: 0; /* Eliminar márgenes */
+}
+
+/* Hacer que el contenedor principal también pueda desplazarse si es necesario */
+.container {
+    overflow: auto; /* Agregar scroll cuando el contenido sea mayor al tamaño */
+    max-height: 85vh; /* Limitar altura para que no se desborde */
+    padding: 20px; /* Espaciado interno */
+}
+
+
+
+/* Hacer que la tabla tenga un área desplazable */
+.container-table {
+    overflow: hidden;
+}
+
+.table-content {
+    overflow-y: auto; /* Habilita scroll vertical */
+    max-height: 400px; /* Ajusta la altura según lo necesario */
+}
+
+/* Hacer que la tabla mantenga su estructura dentro del contenedor */
+.table-content .table {
+    width: 100%; /* Ocupar todo el ancho disponible */
+    border-collapse: collapse; /* Quita espacios entre bordes */
+}
+
+/* Ajuste específico para que el cuerpo de la tabla tenga scroll */
+.table-content tbody {
+    display: block;
+    max-height: 350px; /* Ajusta este valor según lo necesario */
+    overflow-y: auto; /* Habilita scroll dentro del tbody */
+    width: 100%;
+}
+
+/* Mantener las cabeceras fijas mientras se desplaza el tbody */
+.table-content thead {
+    display: block;
+    width: 100%;
+}
+
+/* Estilo para la barra de desplazamiento en navegadores modernos */
+.table-content tbody::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-content tbody::-webkit-scrollbar-thumb {
+    background-color: #39a900; /* Color de la barra */
+    border-radius: 4px;
+}
+
+/* Estilos para la barra de navegación */
+.navbar {
+    background-color: #39a900 !important;
+}
+
+.navbar-brand img {
+    width: 90px;
+    height: auto;
+}
+
+/* Botón verde con efecto al pasar el mouse */
+.btn-success {
+    background-color: #2e8600 !important;
+}
+
+.btn-success:hover {
+    background-color: #267000 !important; /* Verde más oscuro al pasar el mouse */
+}

@@ -6,22 +6,18 @@ import pandas as pd
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Aprendiz, Rh, Instructor, Ficha, TipoDoc, Roll, Estado, Modalidad, ProgramaEnFormacion
-from .forms import UploadFileForm
-from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile 
 import base64
 import errno
 from django.utils import timezone
 import unicodedata
-from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.utils.timezone import make_naive
 from io import BytesIO
 from carnetizacion.models import Aprendiz, Ficha  # Asegúrate de importar los modelos
-
+from django.utils.timezone import now
 # Create your views here.
 
 #reportes
@@ -246,43 +242,116 @@ def upload_excel(request):
 
     return render(request, "upload_excel.html")
 
-#subir excel Instructores
+# subir excel Instructores
 
 def subir_instructores(request):
     if request.method == "POST" and request.FILES.get("instructores_file"):
         archivo_excel = request.FILES["instructores_file"]
-        df = pd.read_excel(archivo_excel, header=None)  # Sin encabezado
+
+        try:
+            df = pd.read_excel(archivo_excel, header=None, skiprows=1)  # Saltar encabezado
+        except Exception as e:
+            return JsonResponse({"error": f"❌ Error al leer el archivo: {str(e)}"})
+
         registros_exitosos = 0
         registros_fallidos = 0
         errores = []
 
         for index, row in df.iterrows():
             try:
-                if Instructor.objects.filter(numero_identificacion=row[2]).exists():
-                    registros_fallidos += 1  # Ya existe, no se sube
+                if len(row) < 4:  # Asegurar que la fila tiene suficientes columnas
+                    errores.append(f"❌ Fila {index + 2} no tiene suficientes columnas.")
+                    registros_fallidos += 1
                     continue
 
+                correo_instructor = str(row[0]).strip() if pd.notna(row[0]) else None
+                nombres = str(row[1]).strip() if pd.notna(row[1]) else None
+                apellidos = str(row[2]).strip() if pd.notna(row[2]) else None
+                numero_identificacion = str(row[3]).strip() if pd.notna(row[3]) else None
+
+                if not all([correo_instructor, nombres, apellidos, numero_identificacion]):
+                    errores.append(f"❌ Fila {index + 2} tiene datos faltantes.")
+                    registros_fallidos += 1
+                    continue
+
+                # Verificar si el instructor ya existe
+                if Instructor.objects.filter(numero_identificacion=numero_identificacion).exists():
+                    errores.append(f"⚠️ Instructor con ID {numero_identificacion} ya existe en fila {index + 2}.")
+                    registros_fallidos += 1
+                    continue
+
+                # Crear instructor
                 Instructor.objects.create(
-                    nombres=row[0],
-                    apellidos=row[1],
-                    numero_identificacion=row[2],
-                    correo_instructor=row[3],
-                    password=None,  # Se sube como NULL
-                    numero_telefono=None,  # Se sube como NULL
-                    roll=Roll.objects.get(id=2)  # Siempre asignar roll=2 (Instructor)
+                    correo_instructor=correo_instructor,
+                    nombres=nombres,
+                    apellidos=apellidos,
+                    numero_identificacion=numero_identificacion,
+                    password=None,  # Se deja como NULL
+                    numero_telefono=None,  # Se deja como NULL
+                    roll=Roll.objects.get(id=2)  # Asignar roll=2 (Instructor)
                 )
+
                 registros_exitosos += 1
+
             except Exception as e:
-                errores.append(str(e))
+                errores.append(f"⚠️ Error en fila {index + 2}: {str(e)}")
                 registros_fallidos += 1
 
         mensaje = f"✅ {registros_exitosos} instructores subidos correctamente."
         if registros_fallidos > 0:
-            mensaje += f" ❌ {registros_fallidos} instructores no se subieron por duplicados o errores."
+            mensaje += f" ❌ {registros_fallidos} instructores no se subieron."
 
-        return JsonResponse({"success": True, "message": mensaje})
+        return JsonResponse({"success": True, "message": mensaje, "errores": errores})
 
     return JsonResponse({"success": False, "message": "No se recibió ningún archivo."})
+
+# subir fichas
+
+def subir_fichas(request):
+    if request.method == 'POST' and request.FILES.get('instructores_file'):
+        archivo_excel = request.FILES['instructores_file']
+        modalidad_id = request.POST.get('modalidad')  # Recibir modalidad desde el formulario
+
+        try:
+            modalidad = Modalidad.objects.get(id=modalidad_id)
+        except Modalidad.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Modalidad no encontrada"}, status=400)
+
+        # Leer el archivo Excel omitiendo la primera fila (encabezado)
+        try:
+            df = pd.read_excel(archivo_excel, skiprows=1, header=None)  # Omitimos la primera fila
+            df.columns = ["ficha", "nombre_ficha", "fecha_inicio"]  # Asignamos solo 3 nombres
+            df = df.dropna(how='all', axis=1)  # Eliminamos columnas vacías si existen
+        except Exception as e:
+            return JsonResponse({"success": False, "error": f"Error al leer el archivo: {str(e)}"}, status=400)
+
+        subidas = 0
+        existentes = 0
+
+        for _, row in df.iterrows():
+            ficha_id = str(row["ficha"]).strip()
+            nombre_ficha = str(row["nombre_ficha"]).strip()
+            fecha_inicio = str(row["fecha_inicio"]).strip()
+
+            # Verificar si la ficha ya existe
+            if not Ficha.objects.filter(ficha=ficha_id).exists():
+                Ficha.objects.create(
+                    ficha=ficha_id,
+                    nombre_ficha=nombre_ficha,
+                    fecha_inicio=fecha_inicio,
+                    modalidad=modalidad  # Se asigna la modalidad desde el formulario
+                )
+                subidas += 1
+            else:
+                existentes += 1
+
+        return JsonResponse({
+            "success": True,
+            "subidas": subidas,
+            "existentes": existentes
+        })
+
+    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
 # verificar documento
 
@@ -458,6 +527,16 @@ def admin_dashboard(request):
 def gestionar_usuarios(request):
     instructores = Instructor.objects.all()
     return render(request, "gestionar-usuarios.html", {"instructores":instructores})
+
+def gestionar_fichas(request):
+    fichas = Ficha.objects.all()
+    modalidades = Modalidad.objects.all()
+    return render(request, "gestionar-fichas.html", {"fichas":fichas, "modalidades":modalidades})
+
+def gestionar_programas(request):
+    fichas = Ficha.objects.prefetch_related('instructores')  # Optimiza la consulta
+    return render(request, "subir-fichas.html", {"fichas": fichas})
+
 
 def mis_fichas(request):
     return render (request, 'mis_fichas.html')

@@ -38,7 +38,7 @@
     <div class="container-info">
       {% block content %}
       <div class="buttons">
-        <a href="#">
+        <a href="{% url "gestionar_fichas" %}">
           <div class="button">
             <img src="{% static 'imagenes/fichas_admin.png' %}">Ver todas las fichas
           </div>
@@ -50,15 +50,15 @@
           </div>
         </a>
         
-        <a href="#">
+        <a href="{% url "gestionar_fichas" %}">
           <div class="button">
-            <img src="{% static 'imagenes/aprobar.png' %}">Aprobar Registros
+            <img src="{% static 'imagenes/aprobar.png' %}">Subir Fichas
           </div>
         </a>
         
-        <a href="#">
+        <a href="{% url "gestionar_programas" %}">
           <div class="button">
-            <img src="{% static 'imagenes/permisos.png' %}">Configurar Permisos
+            <img src="{% static 'imagenes/permisos.png' %}">Gestionar Programas
           </div>
         </a>
       </div>

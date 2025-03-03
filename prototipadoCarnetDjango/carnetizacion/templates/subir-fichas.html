@@ -1,0 +1,128 @@
+{% extends "base-admin.html" %}
+
+{% block title %} Programas {% endblock %} 
+
+{% block body %}
+<div class="row">  
+    <div class="col-sm-12 col-md-6 col-lg-3 col-xl-3"> 
+        <h2>Mis Fichas</h2>
+        <div class="card">
+            <div class="card-body">
+                <form id="upload-form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Subir archivo Excel</label>
+                        <input type="file" class="form-control" name="file" id="file" required>
+                    </div>
+                
+                    <!-- Selector de Instructor -->
+                    <div class="mb-3">
+                        <label for="instructor" class="form-label">Seleccionar Instructor</label>
+                        <select name="instructor_a_cargo" id="instructor" class="form-control">
+                            <option value="">-- Selecciona un Instructor --</option>
+                            {% for instructor in instructores %}
+                                <option value="{{ instructor.id }}">{{ instructor.nombres }} {{ instructor.apellidos }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <!-- Selector de Ficha -->
+                    <div class="mb-3">
+                        <label for="ficha" class="form-label">Seleccionar Ficha</label>
+                        <select name="ficha" id="ficha" class="form-control">
+                            <option value="">-- Selecciona una Ficha --</option>
+                            {% for ficha in fichas %}
+                                <option value="{{ ficha.ficha }}">{{ ficha.nombre_ficha }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <button type="submit" class="btn btn-success">Subir Archivo</button>
+                </form>
+                
+                <!-- Mensajes de éxito o error -->
+                <div id="mensaje" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-12 col-md-6 col-lg-8 col-xl-9 container-table"> 
+        <h1>Ficha</h1>
+        <div class="table-content table-responsive py-2">
+            <table class="table table-striped"> 
+                
+                <thead>
+                    Tabla de fichas
+                </thead>
+                <tbody id="fichas-body" class="fichas-body">   
+                    <tr>
+                        <th>Ficha</th>
+                        <th>Nombre Ficha</th>
+                        <th>Fecha Inicio</th>
+                        <th>Instructor a cargo</th>
+                        <th>Editar</th>
+                    </tr>
+                    {% for ficha in fichas %}
+                        <tr>
+                            <td>{{ ficha.ficha }}</td>
+                            <td>{{ ficha.nombre_ficha }}</td>
+                            <td>{{ ficha.fecha_inicio }}</td>
+                            <td>
+                                {% for instructor in ficha.instructores.all %}
+                                    {{ instructor.nombres }} {{ instructor.apellidos }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    No asignado
+                                {% endfor %}
+                            </td>
+                            <td><button type="button" class="btn btn-success">Editar</button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>   
+    </div>    
+</div>
+
+<!-- Agregar AJAX para actualizar la tabla dinámicamente -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $("#upload-form").on("submit", function(event) {
+            event.preventDefault();  // Evita que la página se recargue
+    
+            var formData = new FormData(this);
+            var instructorId = $("#instructor").val(); // Obtener ID del instructor seleccionado
+            var fichaId = $("#ficha").val(); // Obtener ID de la ficha seleccionada
+    
+            formData.append("instructor_a_cargo", instructorId);
+            formData.append("ficha", fichaId);
+    
+            $.ajax({
+                url: "{% url 'upload_excel' %}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.error) {
+                        $("#mensaje").html(
+                            "<div class='alert alert-danger'>" + response.error.replace(/\n/g, "<br>") + "</div>"
+                        );
+                    } else {
+                        $("#mensaje").html(
+                            "<div class='alert alert-success'>" + response.success + "</div>"
+                        );
+                        $("#upload-form")[0].reset(); // Limpiar formulario tras éxito
+                    }
+                },
+                error: function(xhr) {
+                    $("#mensaje").html(
+                        "<div class='alert alert-danger'>❌ Error al subir el archivo.</div>"
+                    );
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
