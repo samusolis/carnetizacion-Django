@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile 
 import base64
+import errno
 from django.utils import timezone
 import unicodedata
 from django.views.decorators.csrf import csrf_exempt
@@ -228,8 +229,15 @@ def carnet(request, documento):
     # Obtener la ficha del aprendiz
     ficha = aprendiz.ficha.ficha  # Asegúrate de que `numero_ficha` es el campo correcto en tu modelo
 
-    # Generar la URL de la imagen del aprendiz
-    foto_url = f"/media/fotos/{ficha}/{aprendiz.numero_documento}.jpg"
+   # Definir la ruta absoluta en el sistema de archivos
+    foto_png_path = os.path.join(settings.MEDIA_ROOT, "fotos", str(ficha), f"{aprendiz.numero_documento}.png")
+    foto_jpg_path = os.path.join(settings.MEDIA_ROOT, "fotos", str(ficha), f"{aprendiz.numero_documento}.jpg")
+
+    # Verificar qué archivo existe y asignar la URL correcta
+    if os.path.exists(foto_png_path):
+        foto_url = f"/media/fotos/{ficha}/{aprendiz.numero_documento}.png"
+    elif os.path.exists(foto_jpg_path):
+        foto_url = f"/media/fotos/{ficha}/{aprendiz.numero_documento}.jpg"
 
     return render(request, 'carnetDel.html', {'aprendiz': aprendiz, 'barcode_url': barcode_url, 'foto_url': foto_url})
 
@@ -372,31 +380,47 @@ def editar_aprendiz(request, numero_documento):
         aprendiz.tipo_documento = get_object_or_404(TipoDoc, id=tipo_doc_id)
         aprendiz.nombres = request.POST['nombres']
         aprendiz.apellidos = request.POST['apellidos']
-        
+
         rh_id = request.POST['rh']
         aprendiz.rh = get_object_or_404(Rh, id=rh_id)
 
-        # Manejo de la imagen
+        # Manejo de la imagen si se sube desde un input file
         if 'foto' in request.FILES:
             aprendiz.foto = request.FILES['foto']
-#############################################################################################
+
+        # Manejo de la imagen en base64
         foto_base64 = request.POST.get("foto_base64")
         if foto_base64:
-            formato, imgstr = foto_base64.split(";base64,")  # Separar metadatos
-            ext = formato.split("/")[-1]  # Obtener extensión (png o jpg)
-            img_data = base64.b64decode(imgstr)  # Decodificar la imagen
+            try:
+                formato, imgstr = foto_base64.split(";base64,")  # Separar metadatos
+                ext = formato.split("/")[-1]  # Obtener extensión (png o jpg)
+                img_data = base64.b64decode(imgstr)  # Decodificar la imagen
 
-            # Guardar la imagen en la carpeta de aprendices dentro de MEDIA
-            file_name = f"{numero_documento}.{ext}"
-            file_path = os.path.join(settings.MEDIA_ROOT, "aprendices", file_name)
+                # Definir la ruta donde se guardará la foto
+                ficha_folder = os.path.join(settings.MEDIA_ROOT, "fotos", str(aprendiz.ficha.ficha))
+                
+                # Verificar y crear la carpeta con permisos adecuados
+                if not os.path.exists(ficha_folder):
+                    try:
+                        os.makedirs(ficha_folder, exist_ok=True)
+                        os.chmod(ficha_folder, 0o755)  # Permisos de lectura/escritura/ejecución
+                    except OSError as e:
+                        if e.errno != errno.EEXIST:
+                            return JsonResponse({"error": "No se pudo crear la carpeta"}, status=500)
 
-            # Guardar imagen en la carpeta correspondiente
-            with open(file_path, "wb") as f:
-                f.write(img_data)
+                file_name = f"{numero_documento}.{ext}"
+                file_path = os.path.join(ficha_folder, file_name)
 
-            # Asignar la ruta de la imagen al campo del aprendiz
-            aprendiz.foto.name = f"aprendices/{file_name}"
-#############################################################################################
+                # Guardar imagen en la carpeta correspondiente
+                with open(file_path, "wb") as f:
+                    f.write(img_data)
+
+                # Asignar la ruta de la imagen al campo del aprendiz
+                aprendiz.foto.name = os.path.join("fotos", str(aprendiz.ficha.ficha), file_name)
+
+            except Exception as e:
+                return JsonResponse({"error": f"No se pudo procesar la imagen: {str(e)}"}, status=500)
+
         aprendiz.save()
         return redirect('ficha_select', numero=aprendiz.ficha.ficha)
 
@@ -410,8 +434,48 @@ def editar_aprendiz(request, numero_documento):
     })
 
 
+def subir_foto(request, numero_documento):
+    aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
+    foto_base64 = request.POST.get("foto_base64")
 
+    if foto_base64:
+        try:
+            formato, imgstr = foto_base64.split(";base64,")  # Separar metadatos
+            ext = formato.split("/")[-1]  # Obtener extensión (png o jpg)
+            img_data = base64.b64decode(imgstr)  # Decodificar la imagen
 
+            # Definir la carpeta dentro de `media/fotos/{numero_de_ficha}/`
+            ficha_folder = os.path.join(settings.MEDIA_ROOT, "fotos", str(aprendiz.ficha.ficha))
+
+            # Verificar y crear la carpeta con permisos adecuados
+            if not os.path.exists(ficha_folder):
+                try:
+                    os.makedirs(ficha_folder, exist_ok=True)
+                    os.chmod(ficha_folder, 0o755)  # Permisos adecuados
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        return JsonResponse({"error": "No se pudo crear la carpeta de fotos"}, status=500)
+
+            file_name = f"{numero_documento}.{ext}"
+            file_path = os.path.join(ficha_folder, file_name)
+
+            # Verificar si se tiene permiso para escribir en la carpeta
+            if not os.access(ficha_folder, os.W_OK):
+                return JsonResponse({"error": "No tienes permisos para escribir en la carpeta de fotos"}, status=403)
+
+            # Guardar la imagen en la carpeta correspondiente
+            with open(file_path, "wb") as f:
+                f.write(img_data)
+
+            # Asignar la ruta de la imagen al campo del aprendiz
+            aprendiz.foto.name = os.path.join("fotos", str(aprendiz.ficha.ficha), file_name)
+            aprendiz.save()
+
+        except Exception as e:
+            return JsonResponse({"error": f"Error al guardar la foto: {str(e)}"}, status=500)
+
+    return JsonResponse({"mensaje": "Foto subida correctamente"})
+#############################################
 def carnetInstru(request):
     instructor_id = request.session.get("instructor_id")
 

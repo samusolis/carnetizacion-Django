@@ -13,9 +13,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from django.conf.urls.static import static
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -27,7 +27,6 @@ SECRET_KEY = 'django-insecure-5(6&fcjb7k7^!6l7p7r3$@*=p$9%qi3e1)(q+tt_$+**nz=#+o
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -71,7 +70,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'prototipadoCarnetDjango.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -90,6 +88,7 @@ DATABASES = {
     }
 }
 
+# Configuración de archivos multimedia
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -111,7 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -123,12 +121,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # STATICFILES_DIRS = [
@@ -142,8 +138,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración del motor de sesiones
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Guarda sesiones en la base de datos
-
-SESSION_COOKIE_AGE = 60 # segundos
+SESSION_COOKIE_AGE = 60  # segundos
 SESSION_SAVE_EVERY_REQUEST = True  # Guarda sesión en cada request
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # No expira al cerrar el navegador
 
+# Servir archivos multimedia en desarrollo
+if DEBUG:
+    from django.conf import settings
+    from django.conf.urls.static import static
