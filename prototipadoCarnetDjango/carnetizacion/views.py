@@ -17,12 +17,7 @@ from django.http import HttpResponse
 from django.utils.timezone import make_naive
 from io import BytesIO
 from carnetizacion.models import Aprendiz, Ficha  # Asegúrate de importar los modelos
-<<<<<<< HEAD
 from django.utils.timezone import now
-=======
-from PIL import Image, ImageOps
-
->>>>>>> eacb08f22f4049ae175c3da557cccaf91864f1cb
 # Create your views here.
 
 #reportes
