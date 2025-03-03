@@ -15,6 +15,7 @@ from django.core.files.base import ContentFile
 import base64
 from django.utils import timezone
 import unicodedata
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -44,7 +45,7 @@ def reporte_aprendices(request):
     return render(request, "reporte.html", context)
 
 
-# subir excel
+# subir excel Aprendices
 def generar_correo(nombres, apellidos):
     # Normalizar nombres y apellidos (eliminar tildes y caracteres especiales)
     nombres = unicodedata.normalize('NFKD', nombres).encode('ascii', 'ignore').decode('ascii')
@@ -138,6 +139,44 @@ def upload_excel(request):
         return JsonResponse({"success": "Archivo subido correctamente."})
 
     return render(request, "upload_excel.html")
+
+#subir excel Instructores
+
+def subir_instructores(request):
+    if request.method == "POST" and request.FILES.get("instructores_file"):
+        archivo_excel = request.FILES["instructores_file"]
+        df = pd.read_excel(archivo_excel, header=None)  # Sin encabezado
+        registros_exitosos = 0
+        registros_fallidos = 0
+        errores = []
+
+        for index, row in df.iterrows():
+            try:
+                if Instructor.objects.filter(numero_identificacion=row[2]).exists():
+                    registros_fallidos += 1  # Ya existe, no se sube
+                    continue
+
+                Instructor.objects.create(
+                    nombres=row[0],
+                    apellidos=row[1],
+                    numero_identificacion=row[2],
+                    correo_instructor=row[3],
+                    password=None,  # Se sube como NULL
+                    numero_telefono=None,  # Se sube como NULL
+                    roll=Roll.objects.get(id=2)  # Siempre asignar roll=2 (Instructor)
+                )
+                registros_exitosos += 1
+            except Exception as e:
+                errores.append(str(e))
+                registros_fallidos += 1
+
+        mensaje = f"✅ {registros_exitosos} instructores subidos correctamente."
+        if registros_fallidos > 0:
+            mensaje += f" ❌ {registros_fallidos} instructores no se subieron por duplicados o errores."
+
+        return JsonResponse({"success": True, "message": mensaje})
+
+    return JsonResponse({"success": False, "message": "No se recibió ningún archivo."})
 
 # verificar documento
 
@@ -268,13 +307,44 @@ def logout_instructor(request):
 # administrador
 
 def administrador(request):
+    """Página de login para todos los administradores"""
+    logout(request)  # Asegura que no haya sesión activa
     return render(request, "administrador.html")
 
 def admin_login(request):
+    """Proceso de autenticación"""
     if request.method == "POST":
-        correo_admin = request.POST.get("email")
+        username = request.POST.get("username")
         password = request.POST.get("password")
         
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            if user.is_superuser:  
+                login(request, user)
+                return redirect("admin_dashboard")  # Redirige a la página del superadmin
+            
+            else:
+                logout(request)  # Cierra sesión si no es superadmin
+                return redirect("administrador")  # Redirige al login general
+
+        else:
+            logout(request)  # Cierra sesión si las credenciales son incorrectas
+            return render(request, "administrador.html", {"error": "Credenciales incorrectas"})
+
+    return render(request, "administrador.html") 
+
+def admin_dashboard(request):
+    """Panel de control del superadmin"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        logout(request)  # Cierra sesión si el usuario no es superadmin
+        return redirect("administrador")  
+    
+    return render(request, "admin-log.html")  # Renderiza el panel de superadmi
+
+def gestionar_usuarios(request):
+    instructores = Instructor.objects.all()
+    return render(request, "gestionar-usuarios.html", {"instructores":instructores})
 
 def mis_fichas(request):
     return render (request, 'mis_fichas.html')
@@ -378,28 +448,6 @@ def carnetTras(request):
     instructor = get_object_or_404(Instructor, id=instructor_id)  # Obtener el instructor logueado
 
     return render(request, "carnetTras.html", {"instructor": instructor})
-
-
-def ver_fichas_admin(request):
-    return render(request, 'admin/ver_fichas.html')
-
-def gestionar_usuarios(request):
-    return render(request, 'admin/gestionar_usuarios.html')
-
-def aprobar_registros(request):
-    return render(request, 'admin/aprobar_registros.html')
-
-def configurar_permisos(request):
-    return render(request, 'admin/configurar_permisos.html')
-
-def ver_fichas_admin(request):
-    return render(request, 'admin/ver_fichas_admin.html')
-
-def gestionar_usuarios(request):
-    return render(request, 'admin/gestionar_usuarios.html')
-
-def aprobar_registros(request):
-    return render(request, 'admin/aprobar_registros.html')
 
 def configurar_permisos(request):
     return render(request, 'admin/configurar_permisos.html')

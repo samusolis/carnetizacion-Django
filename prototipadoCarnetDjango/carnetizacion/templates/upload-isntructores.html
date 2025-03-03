@@ -1,0 +1,15 @@
+{% block content %}
+<div class="container mt-4">
+    <h2>Subir Instructores</h2>
+    <form id="upload-instructores-form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+    
+        <div class="mb-3">
+            <label for="instructores-file" class="form-label">Seleccionar archivo de instructores</label>
+            <input type="file" class="form-control" name="instructores_file" id="instructores-file" required>
+        </div>
+    
+        <button type="submit" class="btn btn-success">Subir Archivo</button>
+    </form>
+</div>
+{% endblock %}

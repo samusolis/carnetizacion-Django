@@ -25,7 +25,12 @@ urlpatterns = [
     path('admin/', admin.site.urls, name="admin_site"),
     path('',views.index,name="index"),
     path('instructor/', views.instructor, name="instructor"),
+    
     path('administrador/', views.administrador, name="administrador"),
+    path('admin_dashboard/', views.admin_dashboard, name="admin_dashboard"),
+    path('admin-login/', views.admin_login, name="admin_login"),
+    path('gestionar-usuarios/', views.gestionar_usuarios, name='gestionar_usuarios'),
+     path("subir_instructores/", views.subir_instructores, name="subir_instructores"),
     
     path('instru-login/', views.instru_login, name="instru_login"),
     path("dashboard/", views.dashboard_instructor, name="dashboard_instructor"),
@@ -35,7 +40,6 @@ urlpatterns = [
     
     path("logout-instructor/", views.logout_instructor, name="logout_instructor"),
 
-    path('admin-login/', views.admin_login, name="admin_login"),
     
     path('mis-fichas/', views.mis_fichas, name="mis_fichas"),
     path('fichas-instru/', views.instru_fichas, name="fichas_instru"),
@@ -50,13 +54,6 @@ urlpatterns = [
     path('ficha-select/<int:numero>', views.ficha_select, name="ficha_select"),
     path('editar-aprendiz/<int:numero_documento>/', views.editar_aprendiz, name="editar_aprendiz"),
     path('ficha-select/<int:numero>/', views.ficha_select, name="ficha_select"),
-    path('admin/ver-fichas/', views.ver_fichas_admin, name='ver_fichas_admin'),
-    path('admin/gestionar-usuarios/', views.gestionar_usuarios, name='gestionar_usuarios'),
-    path('admin/aprobar-registros/', views.aprobar_registros, name='aprobar_registros'),
-    path('admin/configurar-permisos/', views.configurar_permisos, name='configurar_permisos'),
-    path('ver_fichas_admin/', views.ver_fichas_admin, name='ver_fichas_admin'),
-    path('gestionar_usuarios/', views.gestionar_usuarios, name='gestionar_usuarios'),
-    path('aprobar_registros/', views.aprobar_registros, name='aprobar_registros'),
     path('configurar_permisos/', views.configurar_permisos, name='configurar_permisos'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
