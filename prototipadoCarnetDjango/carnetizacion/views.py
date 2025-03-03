@@ -21,6 +21,7 @@ from django.http import HttpResponse
 from django.utils.timezone import make_naive
 from io import BytesIO
 from carnetizacion.models import Aprendiz, Ficha  # Asegúrate de importar los modelos
+from PIL import Image, ImageOps
 
 # Create your views here.
 
@@ -462,7 +463,7 @@ def gestionar_usuarios(request):
 def mis_fichas(request):
     return render (request, 'mis_fichas.html')
 
-def instru_fichas(request):
+def fichas_instru(request):
     fichas = Ficha.objects.all()
     instructores = Instructor.objects.all()
     return render(request, "fichas-instru.html",{"fichas": fichas, "instructores":instructores})
@@ -474,8 +475,6 @@ def ficha_select(request, numero):
     return render(request, 'ficha-select.html', {'aprendices': aprendices, 'numero': numero})
     # aprendices = Aprendiz.objects.all()
     # return render(request, "ficha-select.html", {"aprendices": aprendices})
-
-
 
 def editar_aprendiz(request, numero_documento):
     aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
@@ -639,4 +638,3 @@ def configurar_permisos(request):
 
     return render(request, "editar_aprendiz.html", {"aprendiz": aprendiz})
 #################################################################################################
-

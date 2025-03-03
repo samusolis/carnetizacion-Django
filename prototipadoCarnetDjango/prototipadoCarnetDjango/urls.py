@@ -44,7 +44,7 @@ urlpatterns = [
 
     
     path('mis-fichas/', views.mis_fichas, name="mis_fichas"),
-    path('fichas-instru/', views.instru_fichas, name="fichas_instru"),
+    path('fichas-instru/', views.fichas_instru, name="fichas_instru"),
     path('crear-clave/', views.crear_clave, name="crear_clave"),
     path('upload/', views.upload_excel, name="upload_excel"),
     
