@@ -16,8 +16,7 @@
                 <a href="{% url 'dashboard_instructor' %}" class="nav-link">Atrás</a>
             </div>
             <a href="{% url 'logout_instructor' %}" class="nav-link logout">Cerrar Sesión</a>
-        </nav>
-        
+        </nav>        
         <h1>Reporte de Aprendices</h1>
     </header>
 
@@ -47,6 +46,7 @@
                     <th>Apellido</th>
                     <th>Correo</th>
                     <th>Fecha de Descarga</th>
+                    <th>Estado</th> 
                 </tr>
             </thead>
             <tbody>
@@ -57,6 +57,7 @@
                     <td>{{ aprendiz.apellidos }}</td>
                     <td>{{ aprendiz.correo }}</td>
                     <td>{{ aprendiz.fecha_descarga }}</td>
+                    <td>{{ aprendiz.estado.estado }}</td>
                 </tr>
                 {% empty %}
                 <tr>

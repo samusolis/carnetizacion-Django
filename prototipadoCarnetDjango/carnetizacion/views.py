@@ -49,6 +49,7 @@ def descargar_reporte_aprendices(request):
     ficha_id = request.GET.get("ficha", None)
 
     # Filtrar aprendices
+    aprendices = Aprendiz.objects.select_related('estado').all()
     aprendices = Aprendiz.objects.all()
     ficha_info = None
 
@@ -60,81 +61,57 @@ def descargar_reporte_aprendices(request):
     data = []
     for aprendiz in aprendices:
         fecha_descarga_naive = make_naive(aprendiz.fecha_descarga).date() if aprendiz.fecha_descarga else ""
+        estado = aprendiz.estado.estado if hasattr(aprendiz, "estado") else "No disponible"  # ✅ Agregar estado
         data.append([
             aprendiz.numero_documento,
             aprendiz.nombres,
             aprendiz.apellidos,
             aprendiz.correo,
-            fecha_descarga_naive  # Convertir a formato fecha sin zona horaria
+            fecha_descarga_naive,  
+            estado  # ✅ Nuevo campo agregado
         ])
 
-    df = pd.DataFrame(data, columns=["Documento", "Nombre", "Apellido", "Correo", "Fecha de Descarga"])
+    # ✅ Agregar "Estado" a las columnas del DataFrame
+    df = pd.DataFrame(data, columns=["Documento", "Nombre", "Apellido", "Correo", "Fecha de Descarga", "Estado"])
 
     # Crear respuesta HTTP con Excel
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Aprendices", startrow=5)  # Mover la tabla hacia abajo
+        df.to_excel(writer, index=False, sheet_name="Aprendices", startrow=5)
 
-        # Obtener workbook y worksheet
         workbook = writer.book
         worksheet = writer.sheets["Aprendices"]
 
-        # Formatos para encabezado
+        # Formatos
         header_format = workbook.add_format({
-            "bold": True,
-            "text_wrap": True,
-            "valign": "vcenter",
-            "fg_color": "#4472C4",  # Azul similar al SENA
-            "font_color": "white",
-            "border": 1
+            "bold": True, "text_wrap": True, "valign": "vcenter",
+            "fg_color": "#4472C4", "font_color": "white", "border": 1
         })
 
-        title_format = workbook.add_format({
-            "bold": True,
-            "font_size": 14,
-            "align": "center",
-            "valign": "vcenter"
-        })
-
-        subtitle_format = workbook.add_format({
-            "bold": True,
-            "font_size": 12,
-            "align": "left",
-            "valign": "vcenter"
-        })
-
-        cell_format = workbook.add_format({
-            "border": 1
-        })
-
-        date_format = workbook.add_format({
-            "num_format": "yyyy-mm-dd",
-            "border": 1
-        })
+        title_format = workbook.add_format({"bold": True, "font_size": 14, "align": "center", "valign": "vcenter"})
+        subtitle_format = workbook.add_format({"bold": True, "font_size": 12, "align": "left", "valign": "vcenter"})
+        cell_format = workbook.add_format({"border": 1})
+        date_format = workbook.add_format({"num_format": "yyyy-mm-dd", "border": 1})
 
         # Agregar encabezado personalizado
         ficha_nombre = ficha_info.nombre_ficha if ficha_info else "Desconocido"
-        
         programa_formacion = ProgramaEnFormacion.objects.filter(ficha=ficha_info).first()
-        nombre_programa = programa_formacion.nombre.nombre_ficha if programa_formacion else "No especificado"
-
-        
         instructor_nombre = f"{programa_formacion.instructor.nombres} {programa_formacion.instructor.apellidos}" if programa_formacion else "No especificado"
 
-        worksheet.merge_range("A1:E1", "Reporte de Aprendices", title_format)
+        worksheet.merge_range("A1:F1", "Reporte de Aprendices", title_format)  # ✅ Expandido para incluir "Estado"
         worksheet.write("A3", f"Número de Ficha: {ficha_id or 'No especificado'}", subtitle_format)
-        worksheet.write("A4", f"Programa de Formación: {programa_formacion}", subtitle_format)
-        worksheet.write("A5", f"Instructor: {instructor}", subtitle_format)
+        worksheet.write("A4", f"Programa de Formación: {programa_formacion.nombre.nombre_ficha if programa_formacion else 'No especificado'}", subtitle_format)
+        worksheet.write("A5", f"Instructor: {instructor_nombre}", subtitle_format)
 
         # Aplicar formato a los encabezados de la tabla
         for col_num, value in enumerate(df.columns):
-            worksheet.write(5, col_num, value, header_format)  # Escribir títulos en la fila 6
-            worksheet.set_column(col_num, col_num, 20)  # Ajustar ancho
+            worksheet.write(5, col_num, value, header_format)  
+            worksheet.set_column(col_num, col_num, 20)  
 
         # Aplicar formato a las celdas de la tabla
-        for row_num, row_data in enumerate(data, start=6):  # Empezar después del encabezado
+        for row_num, row_data in enumerate(data, start=6):  
             for col_num, cell_data in enumerate(row_data):
-                if col_num == 4 and cell_data:  # Columna de fecha
+                if col_num == 4 and cell_data:  
                     worksheet.write_datetime(row_num, col_num, cell_data, date_format)
                 else:
                     worksheet.write(row_num, col_num, cell_data, cell_format)
@@ -144,8 +121,7 @@ def descargar_reporte_aprendices(request):
     response = HttpResponse(output.getvalue(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response["Content-Disposition"] = "attachment; filename=reporte_aprendices.xlsx"
     
-    return response
-
+    return response 
 
 # subir excel Aprendices
 def generar_correo(nombres, apellidos):
@@ -558,34 +534,40 @@ def editar_aprendiz(request, numero_documento):
     aprendiz = get_object_or_404(Aprendiz, numero_documento=numero_documento)
 
     if request.method == 'POST':
-        tipo_doc_id = request.POST['tipoDoc']
+        tipo_doc_id = request.POST.get('tipoDoc')
         aprendiz.tipo_documento = get_object_or_404(TipoDoc, id=tipo_doc_id)
-        aprendiz.nombres = request.POST['nombres']
-        aprendiz.apellidos = request.POST['apellidos']
 
-        rh_id = request.POST['rh']
+        aprendiz.nombres = request.POST.get('nombres')
+        aprendiz.apellidos = request.POST.get('apellidos')
+
+        rh_id = request.POST.get('rh')
         aprendiz.rh = get_object_or_404(Rh, id=rh_id)
 
-        # Manejo de la imagen si se sube desde un input file
+        # Actualización del estado del aprendiz
+        estado_id = request.POST.get('estado')
+        if estado_id:
+            aprendiz.estado = get_object_or_404(Estado, id=estado_id)
+
+        # Manejo de la imagen desde input file
         if 'foto' in request.FILES:
             aprendiz.foto = request.FILES['foto']
 
-        # Manejo de la imagen en base64
+        # Manejo de la imagen en Base64
         foto_base64 = request.POST.get("foto_base64")
         if foto_base64:
             try:
-                formato, imgstr = foto_base64.split(";base64,")  # Separar metadatos
-                ext = formato.split("/")[-1]  # Obtener extensión (png o jpg)
-                img_data = base64.b64decode(imgstr)  # Decodificar la imagen
+                formato, imgstr = foto_base64.split(";base64,")
+                ext = formato.split("/")[-1]
+                img_data = base64.b64decode(imgstr)
 
-                # Definir la ruta donde se guardará la foto
+                # Definir ruta donde se guardará la foto
                 ficha_folder = os.path.join(settings.MEDIA_ROOT, "fotos", str(aprendiz.ficha.ficha))
                 
-                # Verificar y crear la carpeta con permisos adecuados
+                # Crear carpeta si no existe
                 if not os.path.exists(ficha_folder):
                     try:
                         os.makedirs(ficha_folder, exist_ok=True)
-                        os.chmod(ficha_folder, 0o755)  # Permisos de lectura/escritura/ejecución
+                        os.chmod(ficha_folder, 0o755)
                     except OSError as e:
                         if e.errno != errno.EEXIST:
                             return JsonResponse({"error": "No se pudo crear la carpeta"}, status=500)
@@ -593,11 +575,11 @@ def editar_aprendiz(request, numero_documento):
                 file_name = f"{numero_documento}.{ext}"
                 file_path = os.path.join(ficha_folder, file_name)
 
-                # Guardar imagen en la carpeta correspondiente
+                # Guardar la imagen
                 with open(file_path, "wb") as f:
                     f.write(img_data)
 
-                # Asignar la ruta de la imagen al campo del aprendiz
+                # Asignar ruta de la imagen
                 aprendiz.foto.name = os.path.join("fotos", str(aprendiz.ficha.ficha), file_name)
 
             except Exception as e:
@@ -606,13 +588,16 @@ def editar_aprendiz(request, numero_documento):
         aprendiz.save()
         return redirect('ficha_select', numero=aprendiz.ficha.ficha)
 
+    # Cargar datos para el formulario
     grupos_sanguineos = Rh.objects.all()
     tipos_documento = TipoDoc.objects.all()
+    estados = Estado.objects.all()  # Agregado para cargar estados en el template
 
     return render(request, 'editar-aprendiz.html', {
         'aprendiz': aprendiz,
         'grupos_sanguineos': grupos_sanguineos,
-        'tipos_documento': tipos_documento
+        'tipos_documento': tipos_documento,
+        'estados': estados,  # Pasamos los estados al template
     })
 
 

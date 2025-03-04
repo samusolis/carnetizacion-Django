@@ -3,9 +3,8 @@
 {% block title %} Editar Aprendiz {% endblock %} 
 
 {% block body %}
-
 <div class="row">
-    <div class="col-3 justify-content">
+    <div class="col-3">
         <h2>Edición de Aprendiz</h2>
         <div class="card">
             <div class="card-body">
@@ -22,129 +21,87 @@
                             {% endfor %}
                         </select>
                     </div><br/>
-                    
+
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.numero_documento }}" name="numDoc" id="numDoc" readonly required>
+                        <input type="text" class="form-control" value="{{ aprendiz.numero_documento }}" name="numDoc" readonly required>
                     </div><br/>
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.nombres }}" name="nombres" id="nombres" required>
+                        <input type="text" class="form-control" value="{{ aprendiz.nombres }}" name="nombres" required>
                     </div><br/>
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.apellidos }}" name="apellidos" id="apellidos" required>
+                        <input type="text" class="form-control" value="{{ aprendiz.apellidos }}" name="apellidos" required>
                     </div><br/>
+
                     <div class="form-group">
-                        <input type="text" class="form-control" value="{{ aprendiz.ficha_id }}" name="ficha" id="ficha" readonly required>
+                        <input type="text" class="form-control" value="{{ aprendiz.ficha_id }}" name="ficha" readonly required>
                     </div><br/>
-                    
-                    <!-- Campo para subir la foto manualmente -->
+
+                    <!-- Select de Estado -->
+                    <div class="form-group">
+                        <label for="estado">Estado Aprendiz</label>
+                        <select name="estado" id="estado" class="form-control" required>
+                            <option value="">-- Seleccionar Estado --</option>
+                            {% for estado in estados %}
+                                <option value="{{ estado.id }}" {% if estado.id == aprendiz.estado.id %}selected{% endif %}>
+                                    {{ estado.estado }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div><br/>
+
                     <div class="form-group">
                         <label for="foto">Foto del Aprendiz</label>
                         <input type="file" name="foto" class="form-control">
                     </div><br/>
 
-                    <!-- Botón para activar la cámara -->
+                    <!-- Cámara -->
                     <div class="form-group text-center">
                         <button type="button" class="btn btn-warning" onclick="activarCamara()">Activar Cámara</button>
                     </div><br/>
-
-                    <!-- Vista previa de la cámara y captura de foto -->
                     <div class="form-group text-center">
-                        <video id="video" width="320" height="240" autoplay style="display:none; border: 1px solid #000;"></video>
-                        <canvas id="canvas" width="132" height="170" style="display:none; border: 1px solid #000;"></canvas>
+                        <video id="video" width="320" height="240" autoplay style="display:none;"></video>
+                        <canvas id="canvas" width="132" height="170" style="display:none;"></canvas>
                         <input type="hidden" name="foto_base64" id="foto_base64">
                     </div><br/>
-
-                    <!-- Botones para tomar la foto y cancelar -->
                     <div class="form-group text-center d-flex justify-content-center gap-2">
-                        <button type="button" class="btn btn-success" id="btn-capturar" style="display:none;" onclick="capturarFoto()">Capturar Foto</button>
+                        <button type="button" class="btn btn-success" id="btn-capturar" style="display:none;" onclick="capturarFoto()">Capturar</button>
                         <button type="button" class="btn btn-danger" id="btn-cancelar" style="display:none;" onclick="cancelarCamara()">Cancelar</button>
                     </div><br/>
 
+                    <!-- Grupo Sanguíneo -->
                     <div class="form-group">
                         <select name="rh" class="form-control">
                             {% for grupo in grupos_sanguineos %}
-                                <option value="{{ grupo.id }}" {% if grupo == aprendiz.rh_id %}selected{% endif %}>
+                                <option value="{{ grupo.id }}" {% if grupo.id == aprendiz.rh.id %}selected{% endif %}>
                                     {{ grupo.Rh }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div><br/>
-                    <button type="submit" class="btn btn-success">Aplicar Cambios</button>
+
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Script para activar la cámara y capturar la imagen -->
+<!-- Script para Cámara -->
 <script>
-    let video = document.getElementById('video');
-    let canvas = document.getElementById('canvas');
-    let context = canvas.getContext('2d');
-    let btnCapturar = document.getElementById('btn-capturar');
-    let btnCancelar = document.getElementById('btn-cancelar');
-    let fotoBase64 = document.getElementById('foto_base64');
-    let streamActivo = null;
-
     function activarCamara() {
         navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) {
-                streamActivo = stream;
-                video.srcObject = stream;
-                video.style.display = "block";
-                btnCapturar.style.display = "inline-block";
-                btnCancelar.style.display = "inline-block";
-                
-                // Desplazar la página hacia la cámara
-                video.scrollIntoView({ behavior: "smooth", block: "center" });
+            .then(stream => {
+                document.getElementById('video').srcObject = stream;
+                document.getElementById('video').style.display = "block";
             })
-            .catch(function (err) {
-                console.log("Error al acceder a la cámara: " + err);
-            });
+            .catch(err => console.log("Error: " + err));
     }
 
     function capturarFoto() {
-        let targetWidth = 132;
-        let targetHeight = 170;
-        let videoWidth = video.videoWidth;
-        let videoHeight = video.videoHeight;
-        let aspectRatio = targetWidth / targetHeight;
-        let sourceWidth, sourceHeight, offsetX, offsetY;
-
-        if (videoWidth / videoHeight > aspectRatio) {
-            sourceHeight = videoHeight;
-            sourceWidth = videoHeight * aspectRatio;
-            offsetX = (videoWidth - sourceWidth) / 2;
-            offsetY = 0;
-        } else {
-            sourceWidth = videoWidth;
-            sourceHeight = videoWidth / aspectRatio;
-            offsetX = 0;
-            offsetY = (videoHeight - sourceHeight) / 2;
-        }
-
-        context.drawImage(video, offsetX, offsetY, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight);
-        video.style.display = "none";
-        canvas.style.display = "block";
-        btnCapturar.style.display = "none";
-        btnCancelar.style.display = "none";
-        fotoBase64.value = canvas.toDataURL("image/png");
-
-        if (streamActivo) {
-            let tracks = streamActivo.getTracks();
-            tracks.forEach(track => track.stop());
-        }
-    }
-
-    function cancelarCamara() {
-        if (streamActivo) {
-            let tracks = streamActivo.getTracks();
-            tracks.forEach(track => track.stop());
-        }
-        video.style.display = "none";
-        btnCapturar.style.display = "none";
-        btnCancelar.style.display = "none";
+        let canvas = document.getElementById('canvas');
+        let video = document.getElementById('video');
+        canvas.getContext('2d').drawImage(video, 0, 0, 132, 170);
+        document.getElementById('foto_base64').value = canvas.toDataURL("image/png");
     }
 </script>
-
 {% endblock %}

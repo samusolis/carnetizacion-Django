@@ -73,9 +73,10 @@ class Aprendiz(models.Model):
     instructor_cargo = models.ForeignKey(Instructor, on_delete=models.CASCADE)
     roll = models.ForeignKey(Roll, on_delete=models.CASCADE)
     ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
-    estado = models.ForeignKey(Estado, on_delete=models.CASCADE)
+    estado = models.ForeignKey('Estado', on_delete=models.SET_NULL, null=True, blank=True)
     foto = models.ImageField(upload_to=ruta_foto_aprendiz, null=True, blank=True)
     fecha_descarga = models.DateTimeField(default=timezone.now)
+   
 
     # Modificación para permitir guardar imágenes en base64 desde el formulario de edición
     def save(self, *args, **kwargs):
@@ -105,3 +106,8 @@ class ProgramaEnFormacion(models.Model):
     nombre = models.ForeignKey(Ficha, on_delete=models.CASCADE, related_name='programas')
     ficha = models.ForeignKey(Ficha, on_delete=models.CASCADE)
     instructor = models.ForeignKey(Instructor, on_delete=models.CASCADE)
+    
+
+    
+
+

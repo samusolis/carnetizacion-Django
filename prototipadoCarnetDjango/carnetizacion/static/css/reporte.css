@@ -81,3 +81,57 @@ th {
 .logout:hover {
     background-color: darkred;
 }
+/* Botón de Descargar Excel */
+.btn-excel {
+    background-color: #28a745; /* Verde */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-excel:hover {
+    background-color: #218838; /* Verde oscuro */
+    transform: scale(1.05);
+}
+
+/* Botón de Filtrar */
+button[type="submit"] {
+    background-color:#00304D; /* Azul */
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3; /* Azul oscuro */
+    transform: scale(1.05);
+}
+
+/* Botón de Cerrar Sesión */
+.nav-link.logout {
+    background-color: #00304D; /* Rojo */
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.nav-link.logout:hover {
+    background-color: #c82333; /* Rojo oscuro */
+    transform: scale(1.08);
+}
+label {
+    font-weight: bold;
+}
