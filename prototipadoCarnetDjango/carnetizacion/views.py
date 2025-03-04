@@ -48,73 +48,79 @@ def reporte_aprendices(request):
 def descargar_reporte_aprendices(request):
     ficha_id = request.GET.get("ficha", None)
 
-    # Filtrar aprendices
-    aprendices = Aprendiz.objects.select_related('estado').all()
-    aprendices = Aprendiz.objects.all()
-    ficha_info = None
-
+    # Obtener lista de aprendices y filtrar si se proporciona una ficha
+    aprendices = Aprendiz.objects.select_related("estado").all()
     if ficha_id:
         aprendices = aprendices.filter(ficha_id=ficha_id)
-        ficha_info = Ficha.objects.filter(ficha=ficha_id).first()
+
+    ficha_info = Ficha.objects.filter(ficha=ficha_id).first() if ficha_id else None
+    programa_formacion = ProgramaEnFormacion.objects.filter(ficha=ficha_info).first()
+    instructor_nombre = f"{programa_formacion.instructor.nombres} {programa_formacion.instructor.apellidos}" if programa_formacion else "No especificado"
 
     # Crear DataFrame con los datos de los aprendices
     data = []
     for aprendiz in aprendices:
         fecha_descarga_naive = make_naive(aprendiz.fecha_descarga).date() if aprendiz.fecha_descarga else ""
-        estado = aprendiz.estado.estado if hasattr(aprendiz, "estado") else "No disponible"  # ✅ Agregar estado
+        estado = getattr(aprendiz.estado, "estado", "No disponible")  # ✅ Obtener estado correctamente
         data.append([
             aprendiz.numero_documento,
             aprendiz.nombres,
             aprendiz.apellidos,
             aprendiz.correo,
             fecha_descarga_naive,  
-            estado  # ✅ Nuevo campo agregado
+            estado  
         ])
 
-    # ✅ Agregar "Estado" a las columnas del DataFrame
     df = pd.DataFrame(data, columns=["Documento", "Nombre", "Apellido", "Correo", "Fecha de Descarga", "Estado"])
 
     # Crear respuesta HTTP con Excel
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Aprendices", startrow=5)
-
         workbook = writer.book
         worksheet = writer.sheets["Aprendices"]
 
-        # Formatos
-        header_format = workbook.add_format({
-            "bold": True, "text_wrap": True, "valign": "vcenter",
-            "fg_color": "#4472C4", "font_color": "white", "border": 1
-        })
-
+        # Formatos generales
+        header_format = workbook.add_format({"bold": True, "fg_color": "#4472C4", "font_color": "white", "border": 1})
         title_format = workbook.add_format({"bold": True, "font_size": 14, "align": "center", "valign": "vcenter"})
         subtitle_format = workbook.add_format({"bold": True, "font_size": 12, "align": "left", "valign": "vcenter"})
         cell_format = workbook.add_format({"border": 1})
         date_format = workbook.add_format({"num_format": "yyyy-mm-dd", "border": 1})
 
-        # Agregar encabezado personalizado
-        ficha_nombre = ficha_info.nombre_ficha if ficha_info else "Desconocido"
-        programa_formacion = ProgramaEnFormacion.objects.filter(ficha=ficha_info).first()
-        instructor_nombre = f"{programa_formacion.instructor.nombres} {programa_formacion.instructor.apellidos}" if programa_formacion else "No especificado"
+        # Formatos de colores para estados
+        cancelado_format = workbook.add_format({"bg_color": "#FF6666", "border": 1})  # Rojo
+        retiro_format = workbook.add_format({"bg_color": "#FFCC66", "border": 1})  # Naranja
 
-        worksheet.merge_range("A1:F1", "Reporte de Aprendices", title_format)  # ✅ Expandido para incluir "Estado"
+        # Agregar encabezado personalizado
+        worksheet.merge_range("A1:F1", "Reporte de Aprendices", title_format)
         worksheet.write("A3", f"Número de Ficha: {ficha_id or 'No especificado'}", subtitle_format)
         worksheet.write("A4", f"Programa de Formación: {programa_formacion.nombre.nombre_ficha if programa_formacion else 'No especificado'}", subtitle_format)
         worksheet.write("A5", f"Instructor: {instructor_nombre}", subtitle_format)
 
         # Aplicar formato a los encabezados de la tabla
         for col_num, value in enumerate(df.columns):
-            worksheet.write(5, col_num, value, header_format)  
-            worksheet.set_column(col_num, col_num, 20)  
+            worksheet.write(5, col_num, value, header_format)
+            worksheet.set_column(col_num, col_num, 20)
+            
+        cancelado_format = workbook.add_format({"bg_color": "red", "font_color": "white"})
+        retiro_voluntario_format = workbook.add_format({"bg_color": "yellow", "font_color": "black"})  # Cambio a amarillo
 
-        # Aplicar formato a las celdas de la tabla
-        for row_num, row_data in enumerate(data, start=6):  
+
+        # Aplicar formato a las celdas y colorear filas según estado
+        for row_num, row_data in enumerate(data, start=6):
+            estado = row_data[-1]  # Última columna (Estado)
+            row_format = cell_format  # Formato por defecto
+
+            if estado.upper() == "CANCELADO":
+                row_format = cancelado_format  # Rojo
+            elif estado.upper() == "RETIRO VOLUNTARIO":
+                row_format = retiro_voluntario_format  # Naranja
+
             for col_num, cell_data in enumerate(row_data):
-                if col_num == 4 and cell_data:  
+                if col_num == 4 and cell_data:
                     worksheet.write_datetime(row_num, col_num, cell_data, date_format)
                 else:
-                    worksheet.write(row_num, col_num, cell_data, cell_format)
+                    worksheet.write(row_num, col_num, cell_data, row_format)
 
     # Preparar respuesta
     output.seek(0)
